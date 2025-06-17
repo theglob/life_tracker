@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Box,
   List,
@@ -6,16 +6,22 @@ import {
   ListItemText,
   Typography,
   Paper,
-  Divider,
+  Button,
 } from '@mui/material';
+import { Entry } from '../types';
 import { TrackingEntry } from '../types/TrackingTypes';
 import { sampleCategories } from '../data/sampleData';
 
 interface EntryListProps {
-  entries: TrackingEntry[];
+  entries: Entry[];
+  onRefresh: () => void;
 }
 
-const EntryList: React.FC<EntryListProps> = ({ entries }) => {
+const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh }) => {
+  useEffect(() => {
+    onRefresh();
+  }, [onRefresh]);
+
   const getCategoryName = (categoryId: string) => {
     return sampleCategories.find(cat => cat.id === categoryId)?.name || categoryId;
   };
@@ -28,45 +34,58 @@ const EntryList: React.FC<EntryListProps> = ({ entries }) => {
   };
 
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
-      <Typography variant="h5" gutterBottom>
-        Past Entries
-      </Typography>
-      <Paper elevation={2}>
+    <Box sx={{ maxWidth: 800, mx: 'auto' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h5" component="h1">
+          Your Entries
+        </Typography>
+        <Button variant="contained" onClick={onRefresh}>
+          Refresh
+        </Button>
+      </Box>
+
+      {entries.length === 0 ? (
+        <Paper sx={{ p: 3, textAlign: 'center' }}>
+          <Typography color="text.secondary">
+            No entries yet. Add your first entry!
+          </Typography>
+        </Paper>
+      ) : (
         <List>
-          {entries.map((entry, index) => (
-            <React.Fragment key={entry.id}>
-              <ListItem>
-                <ListItemText
-                  primary={
-                    <Typography variant="subtitle1">
-                      {getCategoryName(entry.categoryId)} - {getItemName(entry.categoryId, entry.itemId)}
+          {entries.map((entry) => (
+            <ListItem
+              key={entry.id}
+              divider
+              sx={{
+                mb: 1,
+                bgcolor: 'background.paper',
+                borderRadius: 1,
+              }}
+            >
+              <ListItemText
+                primary={`${entry.categoryId} - ${entry.itemId}`}
+                secondary={
+                  <>
+                    <Typography component="span" variant="body2" color="text.primary">
+                      {new Date(entry.timestamp).toLocaleString()}
                     </Typography>
-                  }
-                  secondary={
-                    <>
-                      <Typography component="span" variant="body2" color="text.primary">
-                        {new Date(entry.timestamp).toLocaleString()}
+                    {entry.rating && (
+                      <Typography component="span" variant="body2" color="text.secondary">
+                        {' - Rating: '}{entry.rating}
                       </Typography>
-                      {entry.rating !== undefined && (
-                        <Typography component="span" variant="body2" color="text.secondary">
-                          {' - Rating: '}{entry.rating}/5
-                        </Typography>
-                      )}
-                      {entry.notes && (
-                        <Typography component="p" variant="body2" color="text.secondary">
-                          Notes: {entry.notes}
-                        </Typography>
-                      )}
-                    </>
-                  }
-                />
-              </ListItem>
-              {index < entries.length - 1 && <Divider />}
-            </React.Fragment>
+                    )}
+                    {entry.notes && (
+                      <Typography component="p" variant="body2" color="text.secondary">
+                        {entry.notes}
+                      </Typography>
+                    )}
+                  </>
+                }
+              />
+            </ListItem>
           ))}
         </List>
-      </Paper>
+      )}
     </Box>
   );
 };
