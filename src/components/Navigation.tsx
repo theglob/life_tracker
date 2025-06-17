@@ -28,6 +28,11 @@ const Navigation: React.FC<NavigationProps> = ({ isAuthenticated, onLogout, user
               <Button color="inherit" component={RouterLink} to="/add">
                 Add Entry
               </Button>
+              {user.role === 'admin' && (
+                <Button color="inherit" component={RouterLink} to="/categories">
+                  Manage Categories
+                </Button>
+              )}
               <Button color="inherit" onClick={onLogout}>
                 Logout
               </Button>

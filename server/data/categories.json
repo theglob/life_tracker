@@ -1,0 +1,106 @@
+{
+  "categories": [
+    {
+      "id": "feelings",
+      "name": "How do you feel?",
+      "items": [
+        {
+          "id": "physical",
+          "name": "Physical",
+          "subItems": [
+            {
+              "id": "headache",
+              "name": "Headache"
+            },
+            {
+              "id": "neck-tension",
+              "name": "Neck Tension"
+            }
+          ]
+        },
+        {
+          "id": "emotional",
+          "name": "Emotional",
+          "subItems": [
+            {
+              "id": "happy",
+              "name": "Happy"
+            },
+            {
+              "id": "sad",
+              "name": "Sad"
+            },
+            {
+              "id": "anxious",
+              "name": "Anxious"
+            },
+            {
+              "id": "stressed",
+              "name": "Stressed"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "food",
+      "name": "What did you eat?",
+      "items": [
+        {
+          "id": "breakfast",
+          "name": "Breakfast",
+          "subItems": [
+            {
+              "id": "cereal",
+              "name": "Cereal"
+            },
+            {
+              "id": "toast",
+              "name": "Toast"
+            },
+            {
+              "id": "eggs",
+              "name": "Eggs"
+            }
+          ]
+        },
+        {
+          "id": "lunch",
+          "name": "Lunch",
+          "subItems": [
+            {
+              "id": "sandwich",
+              "name": "Sandwich"
+            },
+            {
+              "id": "salad",
+              "name": "Salad"
+            },
+            {
+              "id": "soup",
+              "name": "Soup"
+            }
+          ]
+        },
+        {
+          "id": "dinner",
+          "name": "Dinner",
+          "subItems": [
+            {
+              "id": "pasta",
+              "name": "Pasta"
+            },
+            {
+              "id": "meat",
+              "name": "Meat"
+            },
+            {
+              "id": "vegetables",
+              "name": "Vegetables"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

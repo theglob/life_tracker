@@ -9,6 +9,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Login from './components/Login';
 import EntryList from './components/EntryList';
 import EntryForm from './components/EntryForm';
+import CategoryManager from './components/CategoryManager';
 import Navigation from './components/Navigation';
 import { Entry, User } from './types';
 import { API_URL } from './config';
@@ -204,6 +205,13 @@ const App: React.FC = () => {
                   <EntryForm onSubmit={handleAddEntry} />
                 ) : (
                   <Navigate to="/login" replace />
+                )
+              } />
+              <Route path="/categories" element={
+                isAuthenticated && user?.role === 'admin' ? (
+                  <CategoryManager />
+                ) : (
+                  <Navigate to="/" replace />
                 )
               } />
             </Routes>

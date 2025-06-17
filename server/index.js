@@ -20,6 +20,7 @@ app.use(bodyParser.json());
 // Data file paths
 const dataPath = path.join(__dirname, 'data', 'entries.json');
 const usersPath = path.join(__dirname, 'data', 'users.json');
+const categoriesPath = path.join(__dirname, 'data', 'categories.json');
 
 // Ensure data directory exists
 async function ensureDataDirectory() {
@@ -54,6 +55,15 @@ async function initializeDataFiles() {
     await fs.writeFile(usersPath, JSON.stringify(initialUsers, null, 2));
     console.log('Created admin user with password:', adminPassword);
   }
+
+  try {
+    await fs.access(categoriesPath);
+  } catch {
+    const initialCategories = {
+      categories: []
+    };
+    await fs.writeFile(categoriesPath, JSON.stringify(initialCategories, null, 2));
+  }
 }
 
 // Login route
@@ -72,6 +82,258 @@ app.post('/api/login', async (req, res) => {
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// Categories routes
+app.get('/api/categories', auth, async (req, res) => {
+  try {
+    const data = await fs.readFile(categoriesPath, 'utf8');
+    res.json(JSON.parse(data));
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to read categories' });
+  }
+});
+
+app.post('/api/categories', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const data = await fs.readFile(categoriesPath, 'utf8');
+    const { categories } = JSON.parse(data);
+    const newCategory = {
+      ...req.body,
+      id: Date.now().toString(),
+      items: []
+    };
+    categories.push(newCategory);
+    await fs.writeFile(categoriesPath, JSON.stringify({ categories }, null, 2));
+    res.status(201).json(newCategory);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add category' });
+  }
+});
+
+app.put('/api/categories/:categoryId', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const data = await fs.readFile(categoriesPath, 'utf8');
+    const { categories } = JSON.parse(data);
+    const index = categories.findIndex(c => c.id === req.params.categoryId);
+    
+    if (index === -1) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+    categories[index] = { ...categories[index], ...req.body };
+    await fs.writeFile(categoriesPath, JSON.stringify({ categories }, null, 2));
+    res.json(categories[index]);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update category' });
+  }
+});
+
+app.delete('/api/categories/:categoryId', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const data = await fs.readFile(categoriesPath, 'utf8');
+    const { categories } = JSON.parse(data);
+    const filteredCategories = categories.filter(c => c.id !== req.params.categoryId);
+    
+    if (filteredCategories.length === categories.length) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+    await fs.writeFile(categoriesPath, JSON.stringify({ categories: filteredCategories }, null, 2));
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete category' });
+  }
+});
+
+// Items routes
+app.post('/api/categories/:categoryId/items', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const data = await fs.readFile(categoriesPath, 'utf8');
+    const { categories } = JSON.parse(data);
+    const category = categories.find(c => c.id === req.params.categoryId);
+    
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+    const newItem = {
+      ...req.body,
+      id: Date.now().toString(),
+      subItems: []
+    };
+    category.items.push(newItem);
+    await fs.writeFile(categoriesPath, JSON.stringify({ categories }, null, 2));
+    res.status(201).json(newItem);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add item' });
+  }
+});
+
+app.put('/api/categories/:categoryId/items/:itemId', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const data = await fs.readFile(categoriesPath, 'utf8');
+    const { categories } = JSON.parse(data);
+    const category = categories.find(c => c.id === req.params.categoryId);
+    
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+    const itemIndex = category.items.findIndex(i => i.id === req.params.itemId);
+    if (itemIndex === -1) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    category.items[itemIndex] = { ...category.items[itemIndex], ...req.body };
+    await fs.writeFile(categoriesPath, JSON.stringify({ categories }, null, 2));
+    res.json(category.items[itemIndex]);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update item' });
+  }
+});
+
+app.delete('/api/categories/:categoryId/items/:itemId', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const data = await fs.readFile(categoriesPath, 'utf8');
+    const { categories } = JSON.parse(data);
+    const category = categories.find(c => c.id === req.params.categoryId);
+    
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+    const itemIndex = category.items.findIndex(i => i.id === req.params.itemId);
+    if (itemIndex === -1) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    category.items.splice(itemIndex, 1);
+    await fs.writeFile(categoriesPath, JSON.stringify({ categories }, null, 2));
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete item' });
+  }
+});
+
+// SubItems routes
+app.post('/api/categories/:categoryId/items/:itemId/subitems', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const data = await fs.readFile(categoriesPath, 'utf8');
+    const { categories } = JSON.parse(data);
+    const category = categories.find(c => c.id === req.params.categoryId);
+    
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+    const item = category.items.find(i => i.id === req.params.itemId);
+    if (!item) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    const newSubItem = {
+      ...req.body,
+      id: Date.now().toString()
+    };
+    item.subItems.push(newSubItem);
+    await fs.writeFile(categoriesPath, JSON.stringify({ categories }, null, 2));
+    res.status(201).json(newSubItem);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add subitem' });
+  }
+});
+
+app.put('/api/categories/:categoryId/items/:itemId/subitems/:subItemId', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const data = await fs.readFile(categoriesPath, 'utf8');
+    const { categories } = JSON.parse(data);
+    const category = categories.find(c => c.id === req.params.categoryId);
+    
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+    const item = category.items.find(i => i.id === req.params.itemId);
+    if (!item) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    const subItemIndex = item.subItems.findIndex(s => s.id === req.params.subItemId);
+    if (subItemIndex === -1) {
+      return res.status(404).json({ error: 'SubItem not found' });
+    }
+
+    item.subItems[subItemIndex] = { ...item.subItems[subItemIndex], ...req.body };
+    await fs.writeFile(categoriesPath, JSON.stringify({ categories }, null, 2));
+    res.json(item.subItems[subItemIndex]);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update subitem' });
+  }
+});
+
+app.delete('/api/categories/:categoryId/items/:itemId/subitems/:subItemId', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const data = await fs.readFile(categoriesPath, 'utf8');
+    const { categories } = JSON.parse(data);
+    const category = categories.find(c => c.id === req.params.categoryId);
+    
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+    const item = category.items.find(i => i.id === req.params.itemId);
+    if (!item) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    const subItemIndex = item.subItems.findIndex(s => s.id === req.params.subItemId);
+    if (subItemIndex === -1) {
+      return res.status(404).json({ error: 'SubItem not found' });
+    }
+
+    item.subItems.splice(subItemIndex, 1);
+    await fs.writeFile(categoriesPath, JSON.stringify({ categories }, null, 2));
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete subitem' });
   }
 });
 
