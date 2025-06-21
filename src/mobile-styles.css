@@ -29,6 +29,13 @@
   padding: 6px !important;
 }
 
+/* Rating scale labels */
+.mobile-rating-labels {
+  font-size: 0.6rem !important;
+  transform: scale(0.8) !important;
+  transform-origin: center !important;
+}
+
 /* Page titles */
 .mobile-page-title {
   font-size: 1.0rem !important;
@@ -54,7 +61,7 @@
 
 /* Cards and containers */
 .mobile-card {
-  padding: 12px !important;
+  padding: 2px 14px !important;
   margin-bottom: 8px !important;
 }
 
@@ -74,7 +81,7 @@
 
 /* Lists */
 .mobile-list-item {
-  padding: 8px 12px !important;
+  padding: 0px 0px !important;
   min-height: 48px !important;
 }
 

@@ -276,18 +276,38 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
       <Slider
         value={rating}
         onChange={(_, value) => setRating(value as number)}
-        min={0}
-        max={4}
+        min={1}
+        max={5}
         step={1}
         marks={[
-          { value: 0, label: 'sehr schwach' },
-          { value: 1, label: 'schwach' },
-          { value: 2, label: 'ok' },
-          { value: 3, label: 'gut' },
-          { value: 4, label: 'sehr gut' },
+          { value: 1, label: 'sehr schlecht' },
+          { value: 3, label: 'ok' },
+          { value: 5, label: 'sehr gut' },
         ]}
         valueLabelDisplay="auto"
-        sx={{ mb: 2 }}
+        sx={{ 
+          mb: 2,
+          '& .MuiSlider-markLabel': {
+            fontSize: '0.6rem',
+            transform: 'scale(0.8)',
+            transformOrigin: 'center'
+          },
+          '& .MuiSlider-markLabel[data-index="0"]': {
+            textAlign: 'left',
+            left: '0% !important',
+            transform: 'translateX(0) scale(0.8)'
+          },
+          '& .MuiSlider-markLabel[data-index="1"]': {
+            textAlign: 'center',
+            left: '50% !important',
+            transform: 'translateX(-50%) scale(0.8)'
+          },
+          '& .MuiSlider-markLabel[data-index="2"]': {
+            textAlign: 'right',
+            left: '100% !important',
+            transform: 'translateX(-100%) scale(0.8)'
+          }
+        }}
       />
     );
   };

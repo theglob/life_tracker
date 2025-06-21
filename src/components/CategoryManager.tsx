@@ -209,7 +209,6 @@ const CategoryManager: React.FC = () => {
                 secondary={
                   <>
                     {category.categoryType === 'food' ? 'Food Category' : 'Self Category'}
-                    {category.items.length === 0 ? ' - No items' : ` - ${category.items.length} items`}
                   </>
                 }
               />
@@ -251,10 +250,9 @@ const CategoryManager: React.FC = () => {
                     primary={item.name}
                     secondary={
                       <>
-                        {`${item.subItems.length} sub-items`}
                         {item.scaleType && (
                           <span style={{ marginLeft: '8px', color: '#666' }}>
-                            • {getScaleTypeLabel(item.scaleType)}
+                            {getScaleTypeLabel(item.scaleType)}
                           </span>
                         )}
                       </>
