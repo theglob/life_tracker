@@ -11,7 +11,7 @@ import {
   ListItemSecondaryAction,
 } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
-import { Entry } from '../types';
+import { Entry, EntryItem } from '../types';
 import { TrackingEntry } from '../types/TrackingTypes';
 import { API_URL } from '../config';
 
@@ -150,46 +150,111 @@ const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh, onDelete }) =
       ) : (
         <List>
           {entries.map((entry) => (
-            <ListItem
-              key={entry.id}
-              divider
-              sx={{
-                mb: 1,
-                bgcolor: 'background.paper',
-                borderRadius: 1,
-              }}
-            >
-              <ListItemText
-                primary={`${getCategoryName(entry.categoryId)} - ${getItemName(entry.categoryId, entry.itemId)}`}
-                secondary={
-                  <>
-                    <Typography component="span" variant="body2" color="text.primary">
-                      {new Date(entry.timestamp).toLocaleString()}
-                    </Typography>
-                    {entry.rating !== undefined && (
-                      <Typography component="span" variant="body2" color="text.secondary">
-                        {' - Rating: '}{entry.rating}
-                      </Typography>
-                    )}
-                    {entry.weight !== undefined && (
-                      <Typography component="span" variant="body2" color="text.secondary">
-                        {' - Weight: '}{entry.weight}g
-                      </Typography>
-                    )}
-                    {entry.notes && (
-                      <Typography component="span" variant="body2" color="text.secondary">
-                        {' - '}{entry.notes}
-                      </Typography>
-                    )}
-                  </>
-                }
-              />
-              <ListItemSecondaryAction>
-                <IconButton edge="end" aria-label="delete" onClick={() => handleDelete(entry.id)}>
+            <Paper key={entry.id} sx={{ mb: 2, p: 2 }}>
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="h6" color="text.primary">
+                  {getCategoryName(entry.categoryId)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {new Date(entry.timestamp).toLocaleString()}
+                  {entry.notes && (
+                    <span> - {entry.notes}</span>
+                  )}
+                </Typography>
+              </Box>
+              
+              <List dense>
+                {entry.items ? (
+                  // New structure with items array
+                  entry.items.map((item, index) => (
+                    <ListItem
+                      key={`${entry.id}-${index}`}
+                      sx={{
+                        bgcolor: 'background.paper',
+                        borderRadius: 1,
+                        mb: 0.5,
+                      }}
+                    >
+                      <ListItemText
+                        primary={getItemName(entry.categoryId, item.itemId)}
+                        secondary={
+                          <>
+                            {item.rating !== undefined && (
+                              <Typography component="span" variant="body2" color="text.secondary">
+                                Rating: {item.rating}
+                              </Typography>
+                            )}
+                            {item.weight !== undefined && (
+                              <Typography component="span" variant="body2" color="text.secondary">
+                                Weight: {item.weight}g
+                              </Typography>
+                            )}
+                            {item.count !== undefined && (
+                              <Typography component="span" variant="body2" color="text.secondary">
+                                Count: {item.count}
+                              </Typography>
+                            )}
+                            {item.volume !== undefined && (
+                              <Typography component="span" variant="body2" color="text.secondary">
+                                Volume: {item.volume}ml
+                              </Typography>
+                            )}
+                          </>
+                        }
+                      />
+                    </ListItem>
+                  ))
+                ) : (
+                  // Old structure with single itemId, rating, weight
+                  <ListItem
+                    sx={{
+                      bgcolor: 'background.paper',
+                      borderRadius: 1,
+                      mb: 0.5,
+                    }}
+                  >
+                    <ListItemText
+                      primary={getItemName(entry.categoryId, (entry as any).itemId)}
+                      secondary={
+                        <>
+                          {(entry as any).rating !== undefined && (
+                            <Typography component="span" variant="body2" color="text.secondary">
+                              Rating: {(entry as any).rating}
+                            </Typography>
+                          )}
+                          {(entry as any).weight !== undefined && (
+                            <Typography component="span" variant="body2" color="text.secondary">
+                              Weight: {(entry as any).weight}g
+                            </Typography>
+                          )}
+                          {(entry as any).count !== undefined && (
+                            <Typography component="span" variant="body2" color="text.secondary">
+                              Count: {(entry as any).count}
+                            </Typography>
+                          )}
+                          {(entry as any).volume !== undefined && (
+                            <Typography component="span" variant="body2" color="text.secondary">
+                              Volume: {(entry as any).volume}ml
+                            </Typography>
+                          )}
+                        </>
+                      }
+                    />
+                  </ListItem>
+                )}
+              </List>
+              
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                <IconButton 
+                  edge="end" 
+                  aria-label="delete" 
+                  onClick={() => handleDelete(entry.id)}
+                  size="small"
+                >
                   <DeleteIcon />
                 </IconButton>
-              </ListItemSecondaryAction>
-            </ListItem>
+              </Box>
+            </Paper>
           ))}
         </List>
       )}

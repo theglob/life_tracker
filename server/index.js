@@ -177,7 +177,9 @@ app.post('/api/categories/:categoryId/items', auth, async (req, res) => {
     const newItem = {
       ...req.body,
       id: Date.now().toString(),
-      subItems: []
+      subItems: [],
+      // Automatically set scaleType to 'weight' for food categories
+      scaleType: category.categoryType === 'food' ? 'weight' : (req.body.scaleType || 'rating')
     };
     category.items.push(newItem);
     await fs.writeFile(categoriesPath, JSON.stringify({ categories }, null, 2));
@@ -353,7 +355,7 @@ app.post('/api/entries', auth, async (req, res) => {
     const entries = JSON.parse(data);
     const newEntry = {
       ...req.body,
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       timestamp: new Date().toISOString(),
       userId: req.user.id
     };

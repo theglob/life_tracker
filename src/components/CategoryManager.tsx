@@ -26,6 +26,7 @@ import { API_URL } from '../config';
 interface Category {
   id: string;
   name: string;
+  categoryType: 'food' | 'self';
   items: Item[];
 }
 
@@ -33,7 +34,7 @@ interface Item {
   id: string;
   name: string;
   subItems: SubItem[];
-  scaleType?: 'rating' | 'weight';
+  scaleType?: 'rating' | 'weight' | 'count' | 'volume';
 }
 
 interface SubItem {
@@ -49,7 +50,11 @@ const CategoryManager: React.FC = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [dialogType, setDialogType] = useState<'category' | 'item' | 'subItem'>('category');
   const [editMode, setEditMode] = useState(false);
-  const [formData, setFormData] = useState({ name: '', scaleType: 'rating' as 'rating' | 'weight' });
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    categoryType: 'self' as 'food' | 'self',
+    scaleType: 'rating' as 'rating' | 'weight' | 'count' | 'volume' 
+  });
 
   useEffect(() => {
     fetchCategories();
@@ -77,17 +82,19 @@ const CategoryManager: React.FC = () => {
     if (edit && data) {
       setFormData({ 
         name: data.name, 
+        categoryType: data.categoryType || 'self',
         scaleType: data.scaleType || 'rating' 
       });
     } else {
-      setFormData({ name: '', scaleType: 'rating' });
+      const defaultScaleType = (type === 'item' && selectedCategory?.categoryType === 'food') ? 'weight' : 'rating';
+      setFormData({ name: '', categoryType: 'self', scaleType: defaultScaleType });
     }
     setOpenDialog(true);
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
-    setFormData({ name: '', scaleType: 'rating' });
+    setFormData({ name: '', categoryType: 'self', scaleType: 'rating' });
     setSelectedSubItem(null);
   };
 
@@ -96,12 +103,13 @@ const CategoryManager: React.FC = () => {
       const token = localStorage.getItem('token');
       let url = `${API_URL}/api/categories`;
       let method = 'POST';
-      let body: { name: string; scaleType?: 'rating' | 'weight' } = { name: formData.name };
+      let body: { name: string; categoryType?: 'food' | 'self'; scaleType?: 'rating' | 'weight' | 'count' | 'volume' } = { name: formData.name };
 
       if (editMode) {
         method = 'PUT';
         if (dialogType === 'category') {
           url += `/${selectedCategory?.id}`;
+          body = { name: formData.name, categoryType: formData.categoryType };
         } else if (dialogType === 'item') {
           url += `/${selectedCategory?.id}/items/${selectedItem?.id}`;
           body = { name: formData.name, scaleType: formData.scaleType };
@@ -109,7 +117,9 @@ const CategoryManager: React.FC = () => {
           url += `/${selectedCategory?.id}/items/${selectedItem?.id}/subitems/${selectedSubItem?.id}`;
         }
       } else {
-        if (dialogType === 'item') {
+        if (dialogType === 'category') {
+          body = { name: formData.name, categoryType: formData.categoryType };
+        } else if (dialogType === 'item') {
           url += `/${selectedCategory?.id}/items`;
           body = { name: formData.name, scaleType: formData.scaleType };
         } else if (dialogType === 'subItem') {
@@ -165,6 +175,10 @@ const CategoryManager: React.FC = () => {
     switch (scaleType) {
       case 'weight':
         return 'Weight (0-500g)';
+      case 'count':
+        return 'Count (0-10)';
+      case 'volume':
+        return 'Volume (0-1000ml)';
       case 'rating':
       default:
         return 'Rating (0-4)';
@@ -190,7 +204,12 @@ const CategoryManager: React.FC = () => {
             <ListItem>
               <ListItemText
                 primary={category.name}
-                secondary={category.items.length === 0 ? 'No items' : `${category.items.length} items`}
+                secondary={
+                  <>
+                    {category.categoryType === 'food' ? 'Food Category' : 'Self Category'}
+                    {category.items.length === 0 ? ' - No items' : ` - ${category.items.length} items`}
+                  </>
+                }
               />
               <ListItemSecondaryAction>
                 <IconButton
@@ -315,16 +334,31 @@ const CategoryManager: React.FC = () => {
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             sx={{ mb: 2 }}
           />
+          {dialogType === 'category' && (
+            <FormControl fullWidth sx={{ mt: 2 }}>
+              <InputLabel>Category Type</InputLabel>
+              <Select
+                value={formData.categoryType}
+                label="Category Type"
+                onChange={(e) => setFormData({ ...formData, categoryType: e.target.value as 'food' | 'self' })}
+              >
+                <MenuItem value="self">Self (Rating/Weight per item)</MenuItem>
+                <MenuItem value="food">Food (Weight scale for all items)</MenuItem>
+              </Select>
+            </FormControl>
+          )}
           {dialogType === 'item' && (
             <FormControl fullWidth sx={{ mt: 2 }}>
               <InputLabel>Scale Type</InputLabel>
               <Select
                 value={formData.scaleType}
                 label="Scale Type"
-                onChange={(e) => setFormData({ ...formData, scaleType: e.target.value as 'rating' | 'weight' })}
+                onChange={(e) => setFormData({ ...formData, scaleType: e.target.value as 'rating' | 'weight' | 'count' | 'volume' })}
               >
                 <MenuItem value="rating">Rating (0-4)</MenuItem>
                 <MenuItem value="weight">Weight (0-500g)</MenuItem>
+                <MenuItem value="count">Count</MenuItem>
+                <MenuItem value="volume">Volume</MenuItem>
               </Select>
             </FormControl>
           )}
