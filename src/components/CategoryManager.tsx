@@ -45,6 +45,7 @@ const CategoryManager: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const [selectedSubItem, setSelectedSubItem] = useState<SubItem | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [dialogType, setDialogType] = useState<'category' | 'item' | 'subItem'>('category');
   const [editMode, setEditMode] = useState(false);
@@ -85,6 +86,7 @@ const CategoryManager: React.FC = () => {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setFormData({ name: '' });
+    setSelectedSubItem(null);
   };
 
   const handleSubmit = async () => {
@@ -101,7 +103,7 @@ const CategoryManager: React.FC = () => {
         } else if (dialogType === 'item') {
           url += `/${selectedCategory?.id}/items/${selectedItem?.id}`;
         } else {
-          url += `/${selectedCategory?.id}/items/${selectedItem?.id}/subitems/${selectedItem?.subItems[0].id}`;
+          url += `/${selectedCategory?.id}/items/${selectedItem?.id}/subitems/${selectedSubItem?.id}`;
         }
       } else {
         if (dialogType === 'item') {
@@ -278,6 +280,7 @@ const CategoryManager: React.FC = () => {
                             onClick={() => {
                               setSelectedCategory(category);
                               setSelectedItem(item);
+                              setSelectedSubItem(subItem);
                               handleOpenDialog('subItem', true, subItem);
                             }}
                           >
