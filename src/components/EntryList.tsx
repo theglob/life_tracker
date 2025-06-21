@@ -40,6 +40,7 @@ interface EntryListProps {
 
 const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh, onDelete }) => {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchCategories();
@@ -52,6 +53,7 @@ const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh, onDelete }) =
 
   const fetchCategories = async () => {
     try {
+      setIsLoading(true);
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/api/categories`, {
         headers: {
@@ -63,6 +65,8 @@ const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh, onDelete }) =
       setCategories(data.categories);
     } catch (error) {
       console.error('Error fetching categories:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -131,7 +135,13 @@ const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh, onDelete }) =
         </Button>
       </Box>
 
-      {entries.length === 0 ? (
+      {isLoading ? (
+        <Paper sx={{ p: 3, textAlign: 'center' }}>
+          <Typography color="text.secondary">
+            Loading entries...
+          </Typography>
+        </Paper>
+      ) : entries.length === 0 ? (
         <Paper sx={{ p: 3, textAlign: 'center' }}>
           <Typography color="text.secondary">
             No entries yet. Add your first entry!
