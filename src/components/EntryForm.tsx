@@ -131,9 +131,6 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
       {!selectedCategory ? (
         // Show categories list
         <Paper sx={{ p: 2 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Select a Category
-          </Typography>
           <List>
             {categories.map((category) => (
               <ListItem key={category.id} disablePadding>
@@ -157,14 +154,19 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
                 Rate: {selectedCategory.name}
               </Typography>
               
-              <Typography gutterBottom>Rating</Typography>
               <Slider
                 value={rating}
                 onChange={(_, value) => setRating(value as number)}
                 min={0}
-                max={5}
+                max={4}
                 step={1}
-                marks
+                marks={[
+                  { value: 0, label: 'sehr schwach' },
+                  { value: 1, label: 'schwach' },
+                  { value: 2, label: 'ok' },
+                  { value: 3, label: 'gut' },
+                  { value: 4, label: 'sehr gut' },
+                ]}
                 valueLabelDisplay="auto"
                 sx={{ mb: 2 }}
               />
@@ -191,9 +193,6 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
           ) : (
             // Show items list
             <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" sx={{ mb: 2 }}>
-                Select an Item
-              </Typography>
               <List>
                 {selectedCategory.items.map((item) => (
                   <ListItem key={item.id} disablePadding>
@@ -227,9 +226,6 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
               {selectedItemData?.subItems && selectedItemData.subItems.length > 0 ? (
                 // Show sub-items list
                 <Box>
-                  <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                    Select a Sub-Item
-                  </Typography>
                   <List>
                     {selectedItemData.subItems.map((subItem) => (
                       <ListItem key={subItem.id} disablePadding>
@@ -243,14 +239,19 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
               ) : (
                 // Show rating and notes directly for items with no sub-items
                 <Box>
-                  <Typography gutterBottom>Rating</Typography>
                   <Slider
                     value={rating}
                     onChange={(_, value) => setRating(value as number)}
                     min={0}
-                    max={5}
+                    max={4}
                     step={1}
-                    marks
+                    marks={[
+                      { value: 0, label: 'sehr schwach' },
+                      { value: 1, label: 'schwach' },
+                      { value: 2, label: 'ok' },
+                      { value: 3, label: 'gut' },
+                      { value: 4, label: 'sehr gut' },
+                    ]}
                     valueLabelDisplay="auto"
                     sx={{ mb: 2 }}
                   />
@@ -282,14 +283,19 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
                     {selectedCategory.name} - {selectedCategory.items.find(item => item.id === selectedItem)?.name} - {selectedItemData?.subItems?.find(subItem => subItem.id === selectedSubItem)?.name}
                   </Typography>
 
-                  <Typography gutterBottom>Rating</Typography>
                   <Slider
                     value={rating}
                     onChange={(_, value) => setRating(value as number)}
                     min={0}
-                    max={5}
+                    max={4}
                     step={1}
-                    marks
+                    marks={[
+                      { value: 0, label: 'sehr schwach' },
+                      { value: 1, label: 'schwach' },
+                      { value: 2, label: 'ok' },
+                      { value: 3, label: 'gut' },
+                      { value: 4, label: 'sehr gut' },
+                    ]}
                     valueLabelDisplay="auto"
                     sx={{ mb: 2 }}
                   />

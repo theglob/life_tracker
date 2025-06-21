@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Server data files
+server/data/*.json
+server/data/users.json
+server/data/categories.json
+server/data/entries.json

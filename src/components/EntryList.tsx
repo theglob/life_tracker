@@ -45,6 +45,11 @@ const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh, onDelete }) =
     fetchCategories();
   }, []);
 
+  useEffect(() => {
+    // Automatically refresh entries when component mounts
+    onRefresh();
+  }, [onRefresh]);
+
   const fetchCategories = async () => {
     try {
       const token = localStorage.getItem('token');
