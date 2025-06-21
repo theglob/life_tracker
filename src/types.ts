@@ -1,11 +1,17 @@
+export interface EntryItem {
+  itemId: string;
+  rating?: number;
+  weight?: number;
+  count?: number;
+  volume?: number;
+}
+
 export interface Entry {
   id: string;
   timestamp: string;
   userId: string;
   categoryId: string;
-  itemId: string;
-  rating?: number;
-  weight?: number;
+  items: EntryItem[];
   notes?: string;
 }
 

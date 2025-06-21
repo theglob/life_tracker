@@ -145,7 +145,13 @@ const App: React.FC = () => {
       }
 
       const newEntry = await response.json();
-      setEntries(prev => [...prev, newEntry]);
+      setEntries(prevEntries => {
+        const exists = prevEntries.some(e => e.id === newEntry.id);
+        if (exists) {
+          return prevEntries;
+        }
+        return [...prevEntries, newEntry];
+      });
       setError(null);
     } catch (err) {
       console.error('Error adding entry:', err);
