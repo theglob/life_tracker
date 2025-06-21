@@ -5,6 +5,7 @@ export interface Entry {
   categoryId: string;
   itemId: string;
   rating?: number;
+  weight?: number;
   notes?: string;
 }
 

@@ -26,6 +26,7 @@ interface Item {
   id: string;
   name: string;
   subItems: SubItem[];
+  scaleType?: 'rating' | 'weight';
 }
 
 interface SubItem {
@@ -43,6 +44,7 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
   const [selectedItem, setSelectedItem] = useState<string>('');
   const [selectedSubItem, setSelectedSubItem] = useState<string>('');
   const [rating, setRating] = useState<number>(3);
+  const [weight, setWeight] = useState<number>(250);
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
@@ -95,10 +97,14 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
     e.preventDefault();
     if (!selectedCategory) return;
     
+    const selectedItemData = selectedCategory.items.find(item => item.id === selectedItem);
+    const scaleType = selectedItemData?.scaleType || 'rating';
+    
     onSubmit({
       categoryId: selectedCategory.id,
       itemId: selectedSubItem || selectedItem,
-      rating: rating || undefined,
+      rating: scaleType === 'rating' ? rating : undefined,
+      weight: scaleType === 'weight' ? weight : undefined,
       notes: notes || undefined,
     });
     // Reset form
@@ -106,10 +112,56 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
     setSelectedItem('');
     setSelectedSubItem('');
     setRating(3);
+    setWeight(250);
     setNotes('');
   };
 
   const selectedItemData = selectedCategory?.items.find(item => item.id === selectedItem);
+
+  const renderScale = (scaleType?: 'rating' | 'weight') => {
+    if (scaleType === 'weight') {
+      return (
+        <Slider
+          value={weight}
+          onChange={(_, value) => setWeight(value as number)}
+          min={0}
+          max={500}
+          step={10}
+          marks={[
+            { value: 0, label: '0g' },
+            { value: 100, label: '100g' },
+            { value: 200, label: '200g' },
+            { value: 300, label: '300g' },
+            { value: 400, label: '400g' },
+            { value: 500, label: '500g' },
+          ]}
+          valueLabelDisplay="auto"
+          valueLabelFormat={(value) => `${value}g`}
+          sx={{ mb: 2 }}
+        />
+      );
+    }
+    
+    // Default to rating scale
+    return (
+      <Slider
+        value={rating}
+        onChange={(_, value) => setRating(value as number)}
+        min={0}
+        max={4}
+        step={1}
+        marks={[
+          { value: 0, label: 'sehr schwach' },
+          { value: 1, label: 'schwach' },
+          { value: 2, label: 'ok' },
+          { value: 3, label: 'gut' },
+          { value: 4, label: 'sehr gut' },
+        ]}
+        valueLabelDisplay="auto"
+        sx={{ mb: 2 }}
+      />
+    );
+  };
 
   return (
     <Box sx={{ maxWidth: 600, mx: 'auto', p: 3 }}>
@@ -154,22 +206,7 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
                 Rate: {selectedCategory.name}
               </Typography>
               
-              <Slider
-                value={rating}
-                onChange={(_, value) => setRating(value as number)}
-                min={0}
-                max={4}
-                step={1}
-                marks={[
-                  { value: 0, label: 'sehr schwach' },
-                  { value: 1, label: 'schwach' },
-                  { value: 2, label: 'ok' },
-                  { value: 3, label: 'gut' },
-                  { value: 4, label: 'sehr gut' },
-                ]}
-                valueLabelDisplay="auto"
-                sx={{ mb: 2 }}
-              />
+              {renderScale('rating')}
 
               <TextField
                 fullWidth
@@ -199,7 +236,16 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
                     <ListItemButton onClick={() => handleItemClick(item.id)}>
                       <ListItemText
                         primary={item.name}
-                        secondary={(item.subItems && item.subItems.length > 0) ? `${item.subItems.length} sub-items` : 'No sub-items'}
+                        secondary={
+                          <>
+                            {(item.subItems && item.subItems.length > 0) ? `${item.subItems.length} sub-items` : 'No sub-items'}
+                            {item.scaleType && (
+                              <span style={{ marginLeft: '8px', color: '#666' }}>
+                                • {item.scaleType === 'weight' ? 'Weight (0-500g)' : 'Rating (0-4)'}
+                              </span>
+                            )}
+                          </>
+                        }
                       />
                     </ListItemButton>
                   </ListItem>
@@ -237,24 +283,9 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
                   </List>
                 </Box>
               ) : (
-                // Show rating and notes directly for items with no sub-items
+                // Show scale and notes directly for items with no sub-items
                 <Box>
-                  <Slider
-                    value={rating}
-                    onChange={(_, value) => setRating(value as number)}
-                    min={0}
-                    max={4}
-                    step={1}
-                    marks={[
-                      { value: 0, label: 'sehr schwach' },
-                      { value: 1, label: 'schwach' },
-                      { value: 2, label: 'ok' },
-                      { value: 3, label: 'gut' },
-                      { value: 4, label: 'sehr gut' },
-                    ]}
-                    valueLabelDisplay="auto"
-                    sx={{ mb: 2 }}
-                  />
+                  {renderScale(selectedItemData?.scaleType)}
 
                   <TextField
                     fullWidth
@@ -283,22 +314,7 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
                     {selectedCategory.name} - {selectedCategory.items.find(item => item.id === selectedItem)?.name} - {selectedItemData?.subItems?.find(subItem => subItem.id === selectedSubItem)?.name}
                   </Typography>
 
-                  <Slider
-                    value={rating}
-                    onChange={(_, value) => setRating(value as number)}
-                    min={0}
-                    max={4}
-                    step={1}
-                    marks={[
-                      { value: 0, label: 'sehr schwach' },
-                      { value: 1, label: 'schwach' },
-                      { value: 2, label: 'ok' },
-                      { value: 3, label: 'gut' },
-                      { value: 4, label: 'sehr gut' },
-                    ]}
-                    valueLabelDisplay="auto"
-                    sx={{ mb: 2 }}
-                  />
+                  {renderScale(selectedItemData?.scaleType)}
 
                   <TextField
                     fullWidth

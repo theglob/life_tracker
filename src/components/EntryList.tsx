@@ -102,9 +102,22 @@ const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh, onDelete }) =
       return category.name;
     }
     
+    // First, try to find it as a subItem in any item
+    for (const item of category.items) {
+      const subItem = item.subItems.find(subItem => subItem.id === itemId);
+      if (subItem) {
+        return subItem.name;
+      }
+    }
+    
+    // If not found as subItem, try to find it as an item
     const item = category.items.find(item => item.id === itemId);
-    const subItem = item?.subItems?.find(subItem => subItem.id === itemId);
-    return subItem?.name || item?.name || itemId;
+    if (item) {
+      return item.name;
+    }
+    
+    // If not found, return the ID
+    return itemId;
   };
 
   return (
@@ -143,14 +156,19 @@ const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh, onDelete }) =
                     <Typography component="span" variant="body2" color="text.primary">
                       {new Date(entry.timestamp).toLocaleString()}
                     </Typography>
-                    {entry.rating && (
+                    {entry.rating !== undefined && (
                       <Typography component="span" variant="body2" color="text.secondary">
                         {' - Rating: '}{entry.rating}
                       </Typography>
                     )}
+                    {entry.weight !== undefined && (
+                      <Typography component="span" variant="body2" color="text.secondary">
+                        {' - Weight: '}{entry.weight}g
+                      </Typography>
+                    )}
                     {entry.notes && (
                       <Typography component="span" variant="body2" color="text.secondary">
-                        {entry.notes}
+                        {' - '}{entry.notes}
                       </Typography>
                     )}
                   </>
