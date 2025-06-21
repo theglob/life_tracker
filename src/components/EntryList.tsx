@@ -144,7 +144,7 @@ const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh, onDelete }) =
                       </Typography>
                     )}
                     {entry.notes && (
-                      <Typography component="div" variant="body2" color="text.secondary">
+                      <Typography component="span" variant="body2" color="text.secondary">
                         {entry.notes}
                       </Typography>
                     )}
