@@ -19,7 +19,6 @@ import {
   MenuItem,
   Paper,
   Divider,
-  Slider,
 } from '@mui/material';
 import { Delete as DeleteIcon, Edit as EditIcon, Add as AddIcon } from '@mui/icons-material';
 import { API_URL } from '../config';
@@ -50,7 +49,6 @@ const CategoryManager: React.FC = () => {
   const [dialogType, setDialogType] = useState<'category' | 'item' | 'subItem'>('category');
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({ name: '' });
-  const [categoryRatings, setCategoryRatings] = useState<{ [key: string]: number }>({});
 
   useEffect(() => {
     fetchCategories();
@@ -157,13 +155,6 @@ const CategoryManager: React.FC = () => {
     }
   };
 
-  const handleRatingChange = (categoryId: string, value: number) => {
-    setCategoryRatings(prev => ({
-      ...prev,
-      [categoryId]: value
-    }));
-  };
-
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -183,7 +174,7 @@ const CategoryManager: React.FC = () => {
             <ListItem>
               <ListItemText
                 primary={category.name}
-                secondary={category.items.length === 0 ? 'No items - use scale below' : `${category.items.length} items`}
+                secondary={category.items.length === 0 ? 'No items' : `${category.items.length} items`}
               />
               <ListItemSecondaryAction>
                 <IconButton
@@ -192,6 +183,7 @@ const CategoryManager: React.FC = () => {
                     setSelectedCategory(category);
                     handleOpenDialog('item');
                   }}
+                  data-testid="AddIcon"
                 >
                   <AddIcon />
                 </IconButton>
@@ -201,104 +193,85 @@ const CategoryManager: React.FC = () => {
                     setSelectedCategory(category);
                     handleOpenDialog('category', true, category);
                   }}
+                  data-testid="EditIcon"
                 >
                   <EditIcon />
                 </IconButton>
                 <IconButton
                   edge="end"
                   onClick={() => handleDelete('category', category.id)}
+                  data-testid="DeleteIcon"
                 >
                   <DeleteIcon />
                 </IconButton>
               </ListItemSecondaryAction>
             </ListItem>
 
-            {category.items.length === 0 ? (
-              <Box sx={{ p: 2, pl: 4 }}>
-                <Typography gutterBottom variant="body2" color="text.secondary">
-                  Rating Scale
-                </Typography>
-                <Slider
-                  value={categoryRatings[category.id] || 3}
-                  onChange={(_, value) => handleRatingChange(category.id, value as number)}
-                  min={0}
-                  max={5}
-                  step={1}
-                  marks
-                  valueLabelDisplay="auto"
-                  sx={{ mb: 1 }}
-                />
-                <Typography variant="caption" color="text.secondary">
-                  Current rating: {categoryRatings[category.id] || 3}/5
-                </Typography>
-              </Box>
-            ) : (
-              category.items.map((item) => (
-                <Box key={item.id} sx={{ pl: 4 }}>
-                  <ListItem>
-                    <ListItemText
-                      primary={item.name}
-                      secondary={`${item.subItems.length} sub-items`}
-                    />
-                    <ListItemSecondaryAction>
-                      <IconButton
-                        edge="end"
-                        onClick={() => {
-                          setSelectedCategory(category);
-                          setSelectedItem(item);
-                          handleOpenDialog('subItem');
-                        }}
-                      >
-                        <AddIcon />
-                      </IconButton>
-                      <IconButton
-                        edge="end"
-                        onClick={() => {
-                          setSelectedCategory(category);
-                          setSelectedItem(item);
-                          handleOpenDialog('item', true, item);
-                        }}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        edge="end"
-                        onClick={() => handleDelete('item', item.id, category.id)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </ListItemSecondaryAction>
-                  </ListItem>
+            {category.items.length > 0 && category.items.map((item) => (
+              <Box key={item.id} sx={{ pl: 4 }}>
+                <ListItem>
+                  <ListItemText
+                    primary={item.name}
+                    secondary={`${item.subItems.length} sub-items`}
+                  />
+                  <ListItemSecondaryAction>
+                    <IconButton
+                      edge="end"
+                      onClick={() => {
+                        setSelectedCategory(category);
+                        setSelectedItem(item);
+                        handleOpenDialog('subItem');
+                      }}
+                    >
+                      <AddIcon />
+                    </IconButton>
+                    <IconButton
+                      edge="end"
+                      onClick={() => {
+                        setSelectedCategory(category);
+                        setSelectedItem(item);
+                        handleOpenDialog('item', true, item);
+                      }}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      edge="end"
+                      onClick={() => handleDelete('item', item.id, category.id)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </ListItemSecondaryAction>
+                </ListItem>
 
-                  {item.subItems.map((subItem) => (
-                    <Box key={subItem.id} sx={{ pl: 4 }}>
-                      <ListItem>
-                        <ListItemText primary={subItem.name} />
-                        <ListItemSecondaryAction>
-                          <IconButton
-                            edge="end"
-                            onClick={() => {
-                              setSelectedCategory(category);
-                              setSelectedItem(item);
-                              setSelectedSubItem(subItem);
-                              handleOpenDialog('subItem', true, subItem);
-                            }}
-                          >
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton
-                            edge="end"
-                            onClick={() => handleDelete('subItem', subItem.id, category?.id, item.id)}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </ListItemSecondaryAction>
-                      </ListItem>
-                    </Box>
-                  ))}
-                </Box>
-              ))
-            )}
+                {item.subItems.map((subItem) => (
+                  <Box key={subItem.id} sx={{ pl: 4 }}>
+                    <ListItem>
+                      <ListItemText primary={subItem.name} />
+                      <ListItemSecondaryAction>
+                        <IconButton
+                          edge="end"
+                          onClick={() => {
+                            setSelectedCategory(category);
+                            setSelectedItem(item);
+                            setSelectedSubItem(subItem);
+                            handleOpenDialog('subItem', true, subItem);
+                          }}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
+                          edge="end"
+                          onClick={() => handleDelete('subItem', subItem.id, category?.id, item.id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  </Box>
+                ))}
+              </Box>
+            ))}
           </Paper>
         ))}
       </List>

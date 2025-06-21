@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -28,17 +28,13 @@ const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    console.log('App component mounted');
     try {
       const token = localStorage.getItem('token');
       const savedUser = localStorage.getItem('user');
-      console.log('Token exists:', !!token);
-      console.log('Saved user exists:', !!savedUser);
       
       if (token && savedUser) {
         try {
           const parsedUser = JSON.parse(savedUser);
-          console.log('Parsed user:', parsedUser);
           setIsAuthenticated(true);
           setUser(parsedUser);
         } catch (e) {
@@ -57,7 +53,6 @@ const App: React.FC = () => {
 
   const handleLogin = async (username: string, password: string) => {
     try {
-      console.log('Attempting login for user:', username);
       const response = await fetch(`${API_URL}/api/login`, {
         method: 'POST',
         headers: {
@@ -71,7 +66,6 @@ const App: React.FC = () => {
       }
 
       const data = await response.json();
-      console.log('Login successful:', data);
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       setIsAuthenticated(true);
@@ -84,14 +78,13 @@ const App: React.FC = () => {
   };
 
   const handleLogout = () => {
-    console.log('Logging out user');
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setIsAuthenticated(false);
     setUser(null);
   };
 
-  const fetchEntries = async () => {
+  const fetchEntries = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -122,7 +115,7 @@ const App: React.FC = () => {
       console.error('Error fetching entries:', err);
       setError('Failed to load entries. Please try again later.');
     }
-  };
+  }, []);
 
   const handleAddEntry = async (entry: Omit<Entry, 'id' | 'timestamp' | 'userId'>) => {
     try {
@@ -160,7 +153,9 @@ const App: React.FC = () => {
     }
   };
 
-  console.log('Current state:', { isLoading, isAuthenticated, error, user });
+  const handleDeleteEntry = (entryId: string) => {
+    setEntries(prev => prev.filter(entry => entry.id !== entryId));
+  };
 
   if (isLoading) {
     return (
@@ -176,7 +171,7 @@ const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router basename="/life_tracker">
+      <Router basename="/life_tracker/">
         <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           <Navigation isAuthenticated={isAuthenticated} onLogout={handleLogout} user={user} />
           <Container component="main" sx={{ mt: 4, mb: 4, flex: 1 }}>
@@ -195,7 +190,7 @@ const App: React.FC = () => {
               } />
               <Route path="/" element={
                 isAuthenticated ? (
-                  <EntryList entries={entries} onRefresh={fetchEntries} />
+                  <EntryList entries={entries} onRefresh={fetchEntries} onDelete={handleDeleteEntry} />
                 ) : (
                   <Navigate to="/login" replace />
                 )
@@ -214,6 +209,7 @@ const App: React.FC = () => {
                   <Navigate to="/" replace />
                 )
               } />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Container>
         </Box>

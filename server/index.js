@@ -365,6 +365,29 @@ app.post('/api/entries', auth, async (req, res) => {
   }
 });
 
+app.delete('/api/entries/:entryId', auth, async (req, res) => {
+  try {
+    const data = await fs.readFile(dataPath, 'utf8');
+    const entries = JSON.parse(data);
+    const entryIndex = entries.findIndex(e => e.id === req.params.entryId);
+    
+    if (entryIndex === -1) {
+      return res.status(404).json({ error: 'Entry not found' });
+    }
+
+    // Check if user owns the entry or is admin
+    if (entries[entryIndex].userId !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Not authorized to delete this entry' });
+    }
+
+    entries.splice(entryIndex, 1);
+    await fs.writeFile(dataPath, JSON.stringify(entries, null, 2));
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete entry' });
+  }
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).send('OK');

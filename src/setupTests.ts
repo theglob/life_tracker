@@ -18,4 +18,11 @@ global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 jest.mock('@mui/material/styles', () => ({
   ...jest.requireActual('@mui/material/styles'),
   createTheme: jest.fn(() => ({})),
-})); 
+}));
+
+// Polyfill TextEncoder and TextDecoder for tests
+if (typeof global.TextEncoder === 'undefined') {
+  const { TextEncoder, TextDecoder } = require('util');
+  global.TextEncoder = TextEncoder;
+  global.TextDecoder = TextDecoder;
+} 

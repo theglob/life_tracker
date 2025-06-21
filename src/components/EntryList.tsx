@@ -7,7 +7,10 @@ import {
   Typography,
   Paper,
   Button,
+  IconButton,
+  ListItemSecondaryAction,
 } from '@mui/material';
+import { Delete as DeleteIcon } from '@mui/icons-material';
 import { Entry } from '../types';
 import { TrackingEntry } from '../types/TrackingTypes';
 import { API_URL } from '../config';
@@ -32,15 +35,15 @@ interface SubItem {
 interface EntryListProps {
   entries: Entry[];
   onRefresh: () => void;
+  onDelete?: (entryId: string) => void;
 }
 
-const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh }) => {
+const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh, onDelete }) => {
   const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
-    onRefresh();
     fetchCategories();
-  }, [onRefresh]);
+  }, []);
 
   const fetchCategories = async () => {
     try {
@@ -55,6 +58,29 @@ const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh }) => {
       setCategories(data.categories);
     } catch (error) {
       console.error('Error fetching categories:', error);
+    }
+  };
+
+  const handleDelete = async (entryId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/entries/${entryId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete entry');
+      }
+
+      // Call the onDelete callback if provided
+      if (onDelete) {
+        onDelete(entryId);
+      }
+    } catch (error) {
+      console.error('Error deleting entry:', error);
     }
   };
 
@@ -118,13 +144,18 @@ const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh }) => {
                       </Typography>
                     )}
                     {entry.notes && (
-                      <Typography component="p" variant="body2" color="text.secondary">
+                      <Typography component="div" variant="body2" color="text.secondary">
                         {entry.notes}
                       </Typography>
                     )}
                   </>
                 }
               />
+              <ListItemSecondaryAction>
+                <IconButton edge="end" aria-label="delete" onClick={() => handleDelete(entry.id)}>
+                  <DeleteIcon />
+                </IconButton>
+              </ListItemSecondaryAction>
             </ListItem>
           ))}
         </List>
