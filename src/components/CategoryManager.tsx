@@ -19,6 +19,7 @@ import {
   MenuItem,
   Paper,
   Divider,
+  Slider,
 } from '@mui/material';
 import { Delete as DeleteIcon, Edit as EditIcon, Add as AddIcon } from '@mui/icons-material';
 import { API_URL } from '../config';
@@ -44,10 +45,12 @@ const CategoryManager: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const [selectedSubItem, setSelectedSubItem] = useState<SubItem | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [dialogType, setDialogType] = useState<'category' | 'item' | 'subItem'>('category');
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({ name: '' });
+  const [categoryRatings, setCategoryRatings] = useState<{ [key: string]: number }>({});
 
   useEffect(() => {
     fetchCategories();
@@ -83,6 +86,7 @@ const CategoryManager: React.FC = () => {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setFormData({ name: '' });
+    setSelectedSubItem(null);
   };
 
   const handleSubmit = async () => {
@@ -99,7 +103,7 @@ const CategoryManager: React.FC = () => {
         } else if (dialogType === 'item') {
           url += `/${selectedCategory?.id}/items/${selectedItem?.id}`;
         } else {
-          url += `/${selectedCategory?.id}/items/${selectedItem?.id}/subitems/${selectedItem?.subItems[0].id}`;
+          url += `/${selectedCategory?.id}/items/${selectedItem?.id}/subitems/${selectedSubItem?.id}`;
         }
       } else {
         if (dialogType === 'item') {
@@ -126,7 +130,7 @@ const CategoryManager: React.FC = () => {
     }
   };
 
-  const handleDelete = async (type: 'category' | 'item' | 'subItem', id: string) => {
+  const handleDelete = async (type: 'category' | 'item' | 'subItem', id: string, categoryId?: string, itemId?: string) => {
     try {
       const token = localStorage.getItem('token');
       let url = `${API_URL}/api/categories`;
@@ -134,9 +138,9 @@ const CategoryManager: React.FC = () => {
       if (type === 'category') {
         url += `/${id}`;
       } else if (type === 'item') {
-        url += `/${selectedCategory?.id}/items/${id}`;
+        url += `/${categoryId}/items/${id}`;
       } else {
-        url += `/${selectedCategory?.id}/items/${selectedItem?.id}/subitems/${id}`;
+        url += `/${categoryId}/items/${itemId}/subitems/${id}`;
       }
 
       const response = await fetch(url, {
@@ -151,6 +155,13 @@ const CategoryManager: React.FC = () => {
     } catch (error) {
       console.error('Error deleting:', error);
     }
+  };
+
+  const handleRatingChange = (categoryId: string, value: number) => {
+    setCategoryRatings(prev => ({
+      ...prev,
+      [categoryId]: value
+    }));
   };
 
   return (
@@ -172,7 +183,7 @@ const CategoryManager: React.FC = () => {
             <ListItem>
               <ListItemText
                 primary={category.name}
-                secondary={`${category.items.length} items`}
+                secondary={category.items.length === 0 ? 'No items - use scale below' : `${category.items.length} items`}
               />
               <ListItemSecondaryAction>
                 <IconButton
@@ -202,70 +213,92 @@ const CategoryManager: React.FC = () => {
               </ListItemSecondaryAction>
             </ListItem>
 
-            {category.items.map((item) => (
-              <Box key={item.id} sx={{ pl: 4 }}>
-                <ListItem>
-                  <ListItemText
-                    primary={item.name}
-                    secondary={`${item.subItems.length} sub-items`}
-                  />
-                  <ListItemSecondaryAction>
-                    <IconButton
-                      edge="end"
-                      onClick={() => {
-                        setSelectedCategory(category);
-                        setSelectedItem(item);
-                        handleOpenDialog('subItem');
-                      }}
-                    >
-                      <AddIcon />
-                    </IconButton>
-                    <IconButton
-                      edge="end"
-                      onClick={() => {
-                        setSelectedCategory(category);
-                        setSelectedItem(item);
-                        handleOpenDialog('item', true, item);
-                      }}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      edge="end"
-                      onClick={() => handleDelete('item', item.id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </ListItemSecondaryAction>
-                </ListItem>
-
-                {item.subItems.map((subItem) => (
-                  <Box key={subItem.id} sx={{ pl: 4 }}>
-                    <ListItem>
-                      <ListItemText primary={subItem.name} />
-                      <ListItemSecondaryAction>
-                        <IconButton
-                          edge="end"
-                          onClick={() => {
-                            setSelectedCategory(category);
-                            setSelectedItem(item);
-                            handleOpenDialog('subItem', true, subItem);
-                          }}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton
-                          edge="end"
-                          onClick={() => handleDelete('subItem', subItem.id)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                  </Box>
-                ))}
+            {category.items.length === 0 ? (
+              <Box sx={{ p: 2, pl: 4 }}>
+                <Typography gutterBottom variant="body2" color="text.secondary">
+                  Rating Scale
+                </Typography>
+                <Slider
+                  value={categoryRatings[category.id] || 3}
+                  onChange={(_, value) => handleRatingChange(category.id, value as number)}
+                  min={0}
+                  max={5}
+                  step={1}
+                  marks
+                  valueLabelDisplay="auto"
+                  sx={{ mb: 1 }}
+                />
+                <Typography variant="caption" color="text.secondary">
+                  Current rating: {categoryRatings[category.id] || 3}/5
+                </Typography>
               </Box>
-            ))}
+            ) : (
+              category.items.map((item) => (
+                <Box key={item.id} sx={{ pl: 4 }}>
+                  <ListItem>
+                    <ListItemText
+                      primary={item.name}
+                      secondary={`${item.subItems.length} sub-items`}
+                    />
+                    <ListItemSecondaryAction>
+                      <IconButton
+                        edge="end"
+                        onClick={() => {
+                          setSelectedCategory(category);
+                          setSelectedItem(item);
+                          handleOpenDialog('subItem');
+                        }}
+                      >
+                        <AddIcon />
+                      </IconButton>
+                      <IconButton
+                        edge="end"
+                        onClick={() => {
+                          setSelectedCategory(category);
+                          setSelectedItem(item);
+                          handleOpenDialog('item', true, item);
+                        }}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        edge="end"
+                        onClick={() => handleDelete('item', item.id, category.id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </ListItemSecondaryAction>
+                  </ListItem>
+
+                  {item.subItems.map((subItem) => (
+                    <Box key={subItem.id} sx={{ pl: 4 }}>
+                      <ListItem>
+                        <ListItemText primary={subItem.name} />
+                        <ListItemSecondaryAction>
+                          <IconButton
+                            edge="end"
+                            onClick={() => {
+                              setSelectedCategory(category);
+                              setSelectedItem(item);
+                              setSelectedSubItem(subItem);
+                              handleOpenDialog('subItem', true, subItem);
+                            }}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton
+                            edge="end"
+                            onClick={() => handleDelete('subItem', subItem.id, category?.id, item.id)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                    </Box>
+                  ))}
+                </Box>
+              ))
+            )}
           </Paper>
         ))}
       </List>

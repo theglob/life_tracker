@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   List,
@@ -10,7 +10,24 @@ import {
 } from '@mui/material';
 import { Entry } from '../types';
 import { TrackingEntry } from '../types/TrackingTypes';
-import { sampleCategories } from '../data/sampleData';
+import { API_URL } from '../config';
+
+interface Category {
+  id: string;
+  name: string;
+  items: Item[];
+}
+
+interface Item {
+  id: string;
+  name: string;
+  subItems: SubItem[];
+}
+
+interface SubItem {
+  id: string;
+  name: string;
+}
 
 interface EntryListProps {
   entries: Entry[];
@@ -18,17 +35,43 @@ interface EntryListProps {
 }
 
 const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh }) => {
+  const [categories, setCategories] = useState<Category[]>([]);
+
   useEffect(() => {
     onRefresh();
+    fetchCategories();
   }, [onRefresh]);
 
+  const fetchCategories = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/categories`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch categories');
+      const data = await response.json();
+      setCategories(data.categories);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
   const getCategoryName = (categoryId: string) => {
-    return sampleCategories.find(cat => cat.id === categoryId)?.name || categoryId;
+    return categories.find(cat => cat.id === categoryId)?.name || categoryId;
   };
 
   const getItemName = (categoryId: string, itemId: string) => {
-    const category = sampleCategories.find(cat => cat.id === categoryId);
-    const item = category?.items.find(item => item.id === itemId);
+    const category = categories.find(cat => cat.id === categoryId);
+    if (!category) return itemId;
+    
+    // If the itemId matches the categoryId, it means this is a category with no children
+    if (itemId === categoryId) {
+      return category.name;
+    }
+    
+    const item = category.items.find(item => item.id === itemId);
     const subItem = item?.subItems?.find(subItem => subItem.id === itemId);
     return subItem?.name || item?.name || itemId;
   };
@@ -63,7 +106,7 @@ const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh }) => {
               }}
             >
               <ListItemText
-                primary={`${entry.categoryId} - ${entry.itemId}`}
+                primary={`${getCategoryName(entry.categoryId)} - ${getItemName(entry.categoryId, entry.itemId)}`}
                 secondary={
                   <>
                     <Typography component="span" variant="body2" color="text.primary">
