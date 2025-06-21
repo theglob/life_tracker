@@ -1,13 +1,19 @@
 export default {
-  preset: 'ts-jest',
+  preset: 'ts-jest/presets/js-with-ts-esm',
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
-  moduleNameMapping: {
+  moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest',
+    '^.+\\.(ts|tsx)$': [
+      'ts-jest',
+      {
+        useESM: true,
+      },
+    ],
   },
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
   testMatch: [
     '<rootDir>/src/**/__tests__/**/*.(ts|tsx)',
     '<rootDir>/src/**/*.(test|spec).(ts|tsx)',
@@ -20,10 +26,4 @@ export default {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
-  extensionsToTreatAsEsm: ['.ts', '.tsx'],
-  globals: {
-    'ts-jest': {
-      useESM: true,
-    },
-  },
 }; 

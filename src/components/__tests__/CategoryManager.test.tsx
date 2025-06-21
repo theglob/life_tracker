@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CategoryManager from '../CategoryManager';
 import { API_URL } from '../../config';
@@ -130,10 +130,14 @@ describe('CategoryManager', () => {
       });
 
       const nameInput = screen.getByLabelText('Name');
-      await userEvent.type(nameInput, 'New Category');
+      await act(async () => {
+        await userEvent.type(nameInput, 'New Category');
+      });
 
       const saveButton = screen.getByText('Add');
-      fireEvent.click(saveButton);
+      await act(async () => {
+        fireEvent.click(saveButton);
+      });
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
@@ -182,10 +186,14 @@ describe('CategoryManager', () => {
       });
 
       const nameInput = screen.getByLabelText('Name');
-      await userEvent.type(nameInput, 'New Item');
+      await act(async () => {
+        await userEvent.type(nameInput, 'New Item');
+      });
 
       const saveButton = screen.getByText('Add');
-      fireEvent.click(saveButton);
+      await act(async () => {
+        fireEvent.click(saveButton);
+      });
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
@@ -234,10 +242,14 @@ describe('CategoryManager', () => {
       });
 
       const nameInput = screen.getByLabelText('Name');
-      await userEvent.type(nameInput, 'New Sub Item');
+      await act(async () => {
+        await userEvent.type(nameInput, 'New Sub Item');
+      });
 
       const saveButton = screen.getByText('Add');
-      fireEvent.click(saveButton);
+      await act(async () => {
+        fireEvent.click(saveButton);
+      });
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
@@ -287,11 +299,15 @@ describe('CategoryManager', () => {
       });
 
       const nameInput = screen.getByDisplayValue('Test Category');
-      await userEvent.clear(nameInput);
-      await userEvent.type(nameInput, 'Updated Category');
+      await act(async () => {
+        await userEvent.clear(nameInput);
+        await userEvent.type(nameInput, 'Updated Category');
+      });
 
       const saveButton = screen.getByText('Save');
-      fireEvent.click(saveButton);
+      await act(async () => {
+        fireEvent.click(saveButton);
+      });
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
@@ -339,11 +355,15 @@ describe('CategoryManager', () => {
       });
 
       const nameInput = screen.getByDisplayValue('Test Item');
-      await userEvent.clear(nameInput);
-      await userEvent.type(nameInput, 'Updated Item');
+      await act(async () => {
+        await userEvent.clear(nameInput);
+        await userEvent.type(nameInput, 'Updated Item');
+      });
 
       const saveButton = screen.getByText('Save');
-      fireEvent.click(saveButton);
+      await act(async () => {
+        fireEvent.click(saveButton);
+      });
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
