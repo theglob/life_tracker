@@ -16,6 +16,7 @@ import {
 import { ArrowBack as ArrowBackIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { Entry } from '../types';
 import { API_URL } from '../config';
+import '../mobile-styles.css';
 
 interface Category {
   id: string;
@@ -292,9 +293,9 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
   };
 
   return (
-    <Box sx={{ maxWidth: 600, mx: 'auto', p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" component="h1">
+    <Box sx={{ maxWidth: 600, mx: 'auto', p: 2 }} className="mobile-container">
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }} className="mobile-spacing-medium">
+        <Typography variant="h5" component="h1" className="mobile-page-title">
           {selectedCategory ? `New Entry - ${selectedCategory.name}` : 'New Entry'}
         </Typography>
         {selectedCategory && (
@@ -302,6 +303,7 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
             variant="outlined"
             startIcon={<ArrowBackIcon />}
             onClick={handleBackToCategories}
+            className="mobile-back-button"
           >
             Back to Categories
           </Button>
@@ -310,14 +312,15 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
 
       {!selectedCategory ? (
         // Show categories list
-        <Paper sx={{ p: 2 }}>
+        <Paper sx={{ p: 2 }} className="mobile-card">
           <List>
             {categories.map((category) => (
-              <ListItem key={category.id} disablePadding>
+              <ListItem key={category.id} disablePadding className="mobile-list-item">
                 <ListItemButton onClick={() => handleCategoryClick(category)}>
                   <ListItemText
                     primary={category.name}
                     secondary={category.items.length === 0 ? 'No items - use rating scale' : `${category.items.length} items`}
+                    className="mobile-list-text"
                   />
                 </ListItemButton>
               </ListItem>
@@ -329,8 +332,8 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
         <Box>
           {selectedCategory.items.length === 0 ? (
             // Show rating and notes for category with no items
-            <Paper sx={{ p: 3 }}>
-              <Typography variant="h6" sx={{ mb: 2 }}>
+            <Paper sx={{ p: 3 }} className="mobile-card">
+              <Typography variant="h6" sx={{ mb: 2 }} className="mobile-section-title">
                 Rate: {selectedCategory.name}
               </Typography>
               
@@ -344,6 +347,7 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 sx={{ mb: 2 }}
+                className="mobile-form-field"
               />
 
               <Button
@@ -351,13 +355,14 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
                 color="primary"
                 onClick={handleSubmit}
                 fullWidth
+                className="mobile-button"
               >
                 Save Entry
               </Button>
             </Paper>
           ) : (
             // Show items list
-            <Paper sx={{ p: 2 }}>
+            <Paper sx={{ p: 2 }} className="mobile-card">
               {selectedCategory.categoryType === 'food' ? (
                 // Food category - show checkboxes and filtering
                 <Box>
@@ -368,6 +373,7 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
                     onChange={(e) => setFilterText(e.target.value)}
                     sx={{ mb: 2 }}
                     placeholder="Type to filter items..."
+                    className="mobile-form-field"
                   />
                   
                   <List>
@@ -378,11 +384,12 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
                       .map((item) => {
                         const isSelected = selectedFoodItems.some(fi => fi.itemId === item.id);
                         return (
-                          <ListItem key={item.id} disablePadding>
+                          <ListItem key={item.id} disablePadding className="mobile-list-item">
                             <ListItemButton onClick={() => handleFoodItemToggle(item.id)}>
                               <ListItemText
                                 primary={item.name}
                                 secondary="Click to select"
+                                className="mobile-list-text"
                               />
                               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                 <input
@@ -400,19 +407,19 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
 
                   {selectedFoodItems.length > 0 && (
                     <Box sx={{ mt: 3 }}>
-                      <Typography variant="h6" sx={{ mb: 2 }}>
+                      <Typography variant="h6" sx={{ mb: 2 }} className="mobile-section-title">
                         Selected Items
                       </Typography>
                       <List>
                         {selectedFoodItems.map((foodItem) => {
                           const item = selectedCategory.items.find(i => i.id === foodItem.itemId);
                           return (
-                            <ListItem key={foodItem.itemId}>
+                            <ListItem key={foodItem.itemId} className="mobile-list-item">
                               <ListItemText
                                 primary={item?.name}
                                 secondary={
                                   <Box component="span" sx={{ display: 'block', mt: 1 }}>
-                                    <Typography component="span" variant="body2" sx={{ display: 'block', mb: 1 }}>
+                                    <Typography component="span" variant="body2" sx={{ display: 'block', mb: 1 }} className="mobile-text-small">
                                       {foodItem.scaleType === 'weight' ? `Weight: ${foodItem.value}g` : 
                                        foodItem.scaleType === 'count' ? `Count: ${foodItem.value}` :
                                        `Volume: ${foodItem.value}ml`}
@@ -474,10 +481,12 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
                                     )}
                                   </Box>
                                 }
+                                className="mobile-list-text"
                               />
                               <IconButton
                                 edge="end"
                                 onClick={() => handleFoodItemToggle(foodItem.itemId)}
+                                className="mobile-icon-small"
                               >
                                 <DeleteIcon />
                               </IconButton>
@@ -490,10 +499,11 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
                         fullWidth
                         label="Notes"
                         multiline
-                        rows={4}
+                        rows={3}
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
-                        sx={{ mb: 2, mt: 2 }}
+                        sx={{ mb: 2 }}
+                        className="mobile-form-field"
                       />
 
                       <Button
@@ -501,80 +511,52 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
                         color="primary"
                         onClick={handleFoodSubmit}
                         fullWidth
+                        className="mobile-button"
                       >
-                        Save Food Entries
+                        Save Entry
                       </Button>
                     </Box>
                   )}
                 </Box>
               ) : (
-                // Regular category - show normal item list
+                // Self category - show items with sub-items
                 <List>
-                  {(() => {
-                    return selectedCategory.items.map((item) => {
-                      return (
-                        <ListItem key={item.id} disablePadding>
-                          <ListItemButton onClick={() => {
-                            handleItemClick(item.id);
-                          }}>
-                            <ListItemText
-                              primary={item.name}
-                              secondary={
-                                <Typography component="span" variant="body2">
-                                  {(item.subItems && item.subItems.length > 0) ? `${item.subItems.length} sub-items` : 'No sub-items'}
-                                  {item.scaleType && (
-                                    <span style={{ marginLeft: '8px', color: '#666' }}>
-                                      • {item.scaleType === 'weight' ? 'Weight (0-500g)' : 
-                                         item.scaleType === 'count' ? 'Count (0-10)' :
-                                         item.scaleType === 'volume' ? 'Volume (0-1000ml)' :
-                                         'Rating (0-4)'}
-                                    </span>
-                                  )}
-                                </Typography>
-                              }
-                            />
-                          </ListItemButton>
-                        </ListItem>
-                      );
-                    });
-                  })()}
+                  {selectedCategory.items.map((item) => (
+                    <ListItem key={item.id} disablePadding className="mobile-list-item">
+                      <ListItemButton onClick={() => handleItemClick(item.id)}>
+                        <ListItemText
+                          primary={item.name}
+                          secondary={item.subItems.length > 0 ? `${item.subItems.length} sub-items` : 'No sub-items'}
+                          className="mobile-list-text"
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                  ))}
                 </List>
               )}
             </Paper>
           )}
 
-          {selectedItem && (
-            <Paper sx={{ p: 3, mt: 2 }}>
+          {selectedItem && selectedCategory.items.length > 0 && (
+            <Box sx={{ mt: 2 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6">
-                  {selectedCategory.name} - {selectedCategory.items.find(item => item.id === selectedItem)?.name}
+                <Typography variant="h6" className="mobile-section-title">
+                  {selectedCategory.items.find(item => item.id === selectedItem)?.name}
                 </Typography>
                 <Button
                   variant="outlined"
                   size="small"
                   onClick={handleBackToItems}
+                  className="mobile-back-button"
                 >
                   Back to Items
                 </Button>
               </Box>
 
-              {selectedItemData?.subItems && selectedItemData.subItems.length > 0 ? (
-                // Show sub-items list
-                <Box>
-                  <List>
-                    {selectedItemData.subItems.map((subItem) => (
-                      <ListItem key={subItem.id} disablePadding>
-                        <ListItemButton onClick={() => handleSubItemClick(subItem.id)}>
-                          <ListItemText primary={subItem.name} />
-                        </ListItemButton>
-                      </ListItem>
-                    ))}
-                  </List>
-                </Box>
-              ) : (
-                // Show scale and notes directly for items with no sub-items
-                <Box>
-                  {renderScale(selectedItemData?.scaleType)}
+              {selectedCategory.items.find(item => item.id === selectedItem)?.subItems.length === 0 ? (
+                // Show scale and notes for item with no sub-items
+                <Paper sx={{ p: 3 }} className="mobile-card">
+                  {renderScale(selectedCategory.items.find(item => item.id === selectedItem)?.scaleType)}
 
                   <TextField
                     fullWidth
@@ -584,6 +566,7 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     sx={{ mb: 2 }}
+                    className="mobile-form-field"
                   />
 
                   <Button
@@ -591,41 +574,66 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
                     color="primary"
                     onClick={handleSubmit}
                     fullWidth
-                  >
-                    Save Entry
-                  </Button>
-                </Box>
-              )}
-
-              {selectedSubItem && (
-                <Paper sx={{ p: 3, mt: 2 }}>
-                  <Typography variant="h6" sx={{ mb: 2 }}>
-                    {selectedCategory.name} - {selectedCategory.items.find(item => item.id === selectedItem)?.name} - {selectedItemData?.subItems?.find(subItem => subItem.id === selectedSubItem)?.name}
-                  </Typography>
-
-                  {renderScale(selectedItemData?.scaleType)}
-
-                  <TextField
-                    fullWidth
-                    label="Notes"
-                    multiline
-                    rows={4}
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    sx={{ mb: 2 }}
-                  />
-
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleSubmit}
-                    fullWidth
+                    className="mobile-button"
                   >
                     Save Entry
                   </Button>
                 </Paper>
+              ) : (
+                // Show sub-items list
+                <Paper sx={{ p: 2 }} className="mobile-card">
+                  <List>
+                    {selectedCategory.items
+                      .find(item => item.id === selectedItem)
+                      ?.subItems.map((subItem) => (
+                        <ListItem key={subItem.id} disablePadding className="mobile-list-item">
+                          <ListItemButton onClick={() => handleSubItemClick(subItem.id)}>
+                            <ListItemText
+                              primary={subItem.name}
+                              className="mobile-list-text"
+                            />
+                          </ListItemButton>
+                        </ListItem>
+                      ))}
+                  </List>
+                </Paper>
               )}
-            </Paper>
+            </Box>
+          )}
+
+          {selectedSubItem && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2 }} className="mobile-section-title">
+                {selectedCategory.items
+                  .find(item => item.id === selectedItem)
+                  ?.subItems.find(subItem => subItem.id === selectedSubItem)?.name}
+              </Typography>
+
+              <Paper sx={{ p: 3 }} className="mobile-card">
+                {renderScale(selectedCategory.items.find(item => item.id === selectedItem)?.scaleType)}
+
+                <TextField
+                  fullWidth
+                  label="Notes"
+                  multiline
+                  rows={4}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  sx={{ mb: 2 }}
+                  className="mobile-form-field"
+                />
+
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSubmit}
+                  fullWidth
+                  className="mobile-button"
+                >
+                  Save Entry
+                </Button>
+              </Paper>
+            </Box>
           )}
         </Box>
       )}

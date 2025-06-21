@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 import { Delete as DeleteIcon, Edit as EditIcon, Add as AddIcon } from '@mui/icons-material';
 import { API_URL } from '../config';
+import '../mobile-styles.css';
 
 interface Category {
   id: string;
@@ -186,13 +187,14 @@ const CategoryManager: React.FC = () => {
   };
 
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5">Category Manager</Typography>
+    <Box sx={{ maxWidth: 800, mx: 'auto', p: 2 }} className="mobile-container">
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }} className="mobile-spacing-medium">
+        <Typography variant="h5" className="mobile-page-title">Category Manager</Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog('category')}
+          className="mobile-button"
         >
           Add Category
         </Button>

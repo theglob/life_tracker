@@ -14,6 +14,7 @@ import { Delete as DeleteIcon } from '@mui/icons-material';
 import { Entry, EntryItem } from '../types';
 import { TrackingEntry } from '../types/TrackingTypes';
 import { API_URL } from '../config';
+import '../mobile-styles.css';
 
 interface Category {
   id: string;
@@ -125,37 +126,37 @@ const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh, onDelete }) =
   };
 
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" component="h1">
+    <Box sx={{ maxWidth: 800, mx: 'auto' }} className="mobile-container">
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }} className="mobile-spacing-medium">
+        <Typography variant="h5" component="h1" className="mobile-page-title">
           Your Entries
         </Typography>
-        <Button variant="contained" onClick={onRefresh}>
+        <Button variant="contained" onClick={onRefresh} className="mobile-button">
           Refresh
         </Button>
       </Box>
 
       {isLoading ? (
-        <Paper sx={{ p: 3, textAlign: 'center' }}>
-          <Typography color="text.secondary">
+        <Paper sx={{ p: 3, textAlign: 'center' }} className="mobile-card">
+          <Typography color="text.secondary" className="mobile-text-medium">
             Loading entries...
           </Typography>
         </Paper>
       ) : entries.length === 0 ? (
-        <Paper sx={{ p: 3, textAlign: 'center' }}>
-          <Typography color="text.secondary">
+        <Paper sx={{ p: 3, textAlign: 'center' }} className="mobile-card">
+          <Typography color="text.secondary" className="mobile-text-medium">
             No entries yet. Add your first entry!
           </Typography>
         </Paper>
       ) : (
         <List>
           {entries.map((entry) => (
-            <Paper key={entry.id} sx={{ mb: 2, p: 2 }}>
+            <Paper key={entry.id} sx={{ mb: 2, p: 2 }} className="mobile-card">
               <Box sx={{ mb: 1 }}>
-                <Typography variant="h6" color="text.primary">
+                <Typography variant="h6" color="text.primary" className="mobile-section-title">
                   {getCategoryName(entry.categoryId)}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" className="mobile-text-small">
                   {new Date(entry.timestamp).toLocaleString()}
                   {entry.notes && (
                     <span> - {entry.notes}</span>
@@ -174,86 +175,96 @@ const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh, onDelete }) =
                         borderRadius: 1,
                         mb: 0.5,
                       }}
+                      className="mobile-list-item"
                     >
                       <ListItemText
                         primary={getItemName(entry.categoryId, item.itemId)}
                         secondary={
                           <>
                             {item.rating !== undefined && (
-                              <Typography component="span" variant="body2" color="text.secondary">
+                              <Typography component="span" variant="body2" color="text.secondary" className="mobile-text-small">
                                 Rating: {item.rating}
                               </Typography>
                             )}
                             {item.weight !== undefined && (
-                              <Typography component="span" variant="body2" color="text.secondary">
+                              <Typography component="span" variant="body2" color="text.secondary" className="mobile-text-small">
                                 Weight: {item.weight}g
                               </Typography>
                             )}
                             {item.count !== undefined && (
-                              <Typography component="span" variant="body2" color="text.secondary">
+                              <Typography component="span" variant="body2" color="text.secondary" className="mobile-text-small">
                                 Count: {item.count}
                               </Typography>
                             )}
                             {item.volume !== undefined && (
-                              <Typography component="span" variant="body2" color="text.secondary">
+                              <Typography component="span" variant="body2" color="text.secondary" className="mobile-text-small">
                                 Volume: {item.volume}ml
                               </Typography>
                             )}
                           </>
                         }
+                        className="mobile-list-text"
                       />
+                      <ListItemSecondaryAction>
+                        <IconButton
+                          edge="end"
+                          onClick={() => handleDelete(entry.id)}
+                          className="mobile-icon-small"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </ListItemSecondaryAction>
                     </ListItem>
                   ))
                 ) : (
-                  // Old structure with single itemId, rating, weight
+                  // Legacy structure with single item
                   <ListItem
                     sx={{
                       bgcolor: 'background.paper',
                       borderRadius: 1,
-                      mb: 0.5,
                     }}
+                    className="mobile-list-item"
                   >
                     <ListItemText
                       primary={getItemName(entry.categoryId, (entry as any).itemId)}
                       secondary={
                         <>
                           {(entry as any).rating !== undefined && (
-                            <Typography component="span" variant="body2" color="text.secondary">
+                            <Typography component="span" variant="body2" color="text.secondary" className="mobile-text-small">
                               Rating: {(entry as any).rating}
                             </Typography>
                           )}
                           {(entry as any).weight !== undefined && (
-                            <Typography component="span" variant="body2" color="text.secondary">
+                            <Typography component="span" variant="body2" color="text.secondary" className="mobile-text-small">
                               Weight: {(entry as any).weight}g
                             </Typography>
                           )}
                           {(entry as any).count !== undefined && (
-                            <Typography component="span" variant="body2" color="text.secondary">
+                            <Typography component="span" variant="body2" color="text.secondary" className="mobile-text-small">
                               Count: {(entry as any).count}
                             </Typography>
                           )}
                           {(entry as any).volume !== undefined && (
-                            <Typography component="span" variant="body2" color="text.secondary">
+                            <Typography component="span" variant="body2" color="text.secondary" className="mobile-text-small">
                               Volume: {(entry as any).volume}ml
                             </Typography>
                           )}
                         </>
                       }
+                      className="mobile-list-text"
                     />
+                    <ListItemSecondaryAction>
+                      <IconButton
+                        edge="end"
+                        onClick={() => handleDelete(entry.id)}
+                        className="mobile-icon-small"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </ListItemSecondaryAction>
                   </ListItem>
                 )}
               </List>
-              
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-                <IconButton 
-                  edge="end" 
-                  aria-label="delete" 
-                  onClick={() => handleDelete(entry.id)}
-                  size="small"
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </Box>
             </Paper>
           ))}
         </List>

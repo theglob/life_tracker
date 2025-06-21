@@ -13,6 +13,7 @@ import CategoryManager from './components/CategoryManager';
 import Navigation from './components/Navigation';
 import { Entry, User } from './types';
 import { API_URL } from './config';
+import './mobile-styles.css';
 
 const theme = createTheme({
   palette: {
@@ -180,9 +181,14 @@ const App: React.FC = () => {
       <Router basename="/life_tracker/">
         <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           <Navigation isAuthenticated={isAuthenticated} onLogout={handleLogout} user={user} />
-          <Container component="main" sx={{ mt: 4, mb: 4, flex: 1 }}>
+          <Container component="main" className="mobile-container" sx={{ 
+            mt: 2, 
+            mb: 8, // Space for bottom navigation
+            flex: 1,
+            padding: '12px !important'
+          }}>
             {error && (
-              <Typography color="error" sx={{ mb: 2 }}>
+              <Typography color="error" sx={{ mb: 2 }} className="mobile-text-medium">
                 {error}
               </Typography>
             )}
