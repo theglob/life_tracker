@@ -19,7 +19,6 @@ import {
   MenuItem,
   Paper,
   Divider,
-  Slider,
 } from '@mui/material';
 import { Delete as DeleteIcon, Edit as EditIcon, Add as AddIcon } from '@mui/icons-material';
 import { API_URL } from '../config';
@@ -34,6 +33,7 @@ interface Item {
   id: string;
   name: string;
   subItems: SubItem[];
+  scaleType?: 'rating' | 'weight';
 }
 
 interface SubItem {
@@ -49,8 +49,7 @@ const CategoryManager: React.FC = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [dialogType, setDialogType] = useState<'category' | 'item' | 'subItem'>('category');
   const [editMode, setEditMode] = useState(false);
-  const [formData, setFormData] = useState({ name: '' });
-  const [categoryRatings, setCategoryRatings] = useState<{ [key: string]: number }>({});
+  const [formData, setFormData] = useState({ name: '', scaleType: 'rating' as 'rating' | 'weight' });
 
   useEffect(() => {
     fetchCategories();
@@ -76,16 +75,19 @@ const CategoryManager: React.FC = () => {
     setDialogType(type);
     setEditMode(edit);
     if (edit && data) {
-      setFormData({ name: data.name });
+      setFormData({ 
+        name: data.name, 
+        scaleType: data.scaleType || 'rating' 
+      });
     } else {
-      setFormData({ name: '' });
+      setFormData({ name: '', scaleType: 'rating' });
     }
     setOpenDialog(true);
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
-    setFormData({ name: '' });
+    setFormData({ name: '', scaleType: 'rating' });
     setSelectedSubItem(null);
   };
 
@@ -94,7 +96,7 @@ const CategoryManager: React.FC = () => {
       const token = localStorage.getItem('token');
       let url = `${API_URL}/api/categories`;
       let method = 'POST';
-      let body = { name: formData.name };
+      let body: { name: string; scaleType?: 'rating' | 'weight' } = { name: formData.name };
 
       if (editMode) {
         method = 'PUT';
@@ -102,12 +104,14 @@ const CategoryManager: React.FC = () => {
           url += `/${selectedCategory?.id}`;
         } else if (dialogType === 'item') {
           url += `/${selectedCategory?.id}/items/${selectedItem?.id}`;
+          body = { name: formData.name, scaleType: formData.scaleType };
         } else {
           url += `/${selectedCategory?.id}/items/${selectedItem?.id}/subitems/${selectedSubItem?.id}`;
         }
       } else {
         if (dialogType === 'item') {
           url += `/${selectedCategory?.id}/items`;
+          body = { name: formData.name, scaleType: formData.scaleType };
         } else if (dialogType === 'subItem') {
           url += `/${selectedCategory?.id}/items/${selectedItem?.id}/subitems`;
         }
@@ -157,11 +161,14 @@ const CategoryManager: React.FC = () => {
     }
   };
 
-  const handleRatingChange = (categoryId: string, value: number) => {
-    setCategoryRatings(prev => ({
-      ...prev,
-      [categoryId]: value
-    }));
+  const getScaleTypeLabel = (scaleType?: string) => {
+    switch (scaleType) {
+      case 'weight':
+        return 'Weight (0-500g)';
+      case 'rating':
+      default:
+        return 'Rating (0-4)';
+    }
   };
 
   return (
@@ -183,7 +190,7 @@ const CategoryManager: React.FC = () => {
             <ListItem>
               <ListItemText
                 primary={category.name}
-                secondary={category.items.length === 0 ? 'No items - use scale below' : `${category.items.length} items`}
+                secondary={category.items.length === 0 ? 'No items' : `${category.items.length} items`}
               />
               <ListItemSecondaryAction>
                 <IconButton
@@ -192,6 +199,7 @@ const CategoryManager: React.FC = () => {
                     setSelectedCategory(category);
                     handleOpenDialog('item');
                   }}
+                  data-testid="AddIcon"
                 >
                   <AddIcon />
                 </IconButton>
@@ -201,104 +209,94 @@ const CategoryManager: React.FC = () => {
                     setSelectedCategory(category);
                     handleOpenDialog('category', true, category);
                   }}
+                  data-testid="EditIcon"
                 >
                   <EditIcon />
                 </IconButton>
                 <IconButton
                   edge="end"
                   onClick={() => handleDelete('category', category.id)}
+                  data-testid="DeleteIcon"
                 >
                   <DeleteIcon />
                 </IconButton>
               </ListItemSecondaryAction>
             </ListItem>
 
-            {category.items.length === 0 ? (
-              <Box sx={{ p: 2, pl: 4 }}>
-                <Typography gutterBottom variant="body2" color="text.secondary">
-                  Rating Scale
-                </Typography>
-                <Slider
-                  value={categoryRatings[category.id] || 3}
-                  onChange={(_, value) => handleRatingChange(category.id, value as number)}
-                  min={0}
-                  max={5}
-                  step={1}
-                  marks
-                  valueLabelDisplay="auto"
-                  sx={{ mb: 1 }}
-                />
-                <Typography variant="caption" color="text.secondary">
-                  Current rating: {categoryRatings[category.id] || 3}/5
-                </Typography>
-              </Box>
-            ) : (
-              category.items.map((item) => (
-                <Box key={item.id} sx={{ pl: 4 }}>
-                  <ListItem>
-                    <ListItemText
-                      primary={item.name}
-                      secondary={`${item.subItems.length} sub-items`}
-                    />
-                    <ListItemSecondaryAction>
-                      <IconButton
-                        edge="end"
-                        onClick={() => {
-                          setSelectedCategory(category);
-                          setSelectedItem(item);
-                          handleOpenDialog('subItem');
-                        }}
-                      >
-                        <AddIcon />
-                      </IconButton>
-                      <IconButton
-                        edge="end"
-                        onClick={() => {
-                          setSelectedCategory(category);
-                          setSelectedItem(item);
-                          handleOpenDialog('item', true, item);
-                        }}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        edge="end"
-                        onClick={() => handleDelete('item', item.id, category.id)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </ListItemSecondaryAction>
-                  </ListItem>
+            {category.items.length > 0 && category.items.map((item) => (
+              <Box key={item.id} sx={{ pl: 4 }}>
+                <ListItem>
+                  <ListItemText
+                    primary={item.name}
+                    secondary={
+                      <>
+                        {`${item.subItems.length} sub-items`}
+                        {item.scaleType && (
+                          <span style={{ marginLeft: '8px', color: '#666' }}>
+                            • {getScaleTypeLabel(item.scaleType)}
+                          </span>
+                        )}
+                      </>
+                    }
+                  />
+                  <ListItemSecondaryAction>
+                    <IconButton
+                      edge="end"
+                      onClick={() => {
+                        setSelectedCategory(category);
+                        setSelectedItem(item);
+                        handleOpenDialog('subItem');
+                      }}
+                    >
+                      <AddIcon />
+                    </IconButton>
+                    <IconButton
+                      edge="end"
+                      onClick={() => {
+                        setSelectedCategory(category);
+                        setSelectedItem(item);
+                        handleOpenDialog('item', true, item);
+                      }}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      edge="end"
+                      onClick={() => handleDelete('item', item.id, category.id)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </ListItemSecondaryAction>
+                </ListItem>
 
-                  {item.subItems.map((subItem) => (
-                    <Box key={subItem.id} sx={{ pl: 4 }}>
-                      <ListItem>
-                        <ListItemText primary={subItem.name} />
-                        <ListItemSecondaryAction>
-                          <IconButton
-                            edge="end"
-                            onClick={() => {
-                              setSelectedCategory(category);
-                              setSelectedItem(item);
-                              setSelectedSubItem(subItem);
-                              handleOpenDialog('subItem', true, subItem);
-                            }}
-                          >
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton
-                            edge="end"
-                            onClick={() => handleDelete('subItem', subItem.id, category?.id, item.id)}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </ListItemSecondaryAction>
-                      </ListItem>
-                    </Box>
-                  ))}
-                </Box>
-              ))
-            )}
+                {item.subItems.map((subItem) => (
+                  <Box key={subItem.id} sx={{ pl: 4 }}>
+                    <ListItem>
+                      <ListItemText primary={subItem.name} />
+                      <ListItemSecondaryAction>
+                        <IconButton
+                          edge="end"
+                          onClick={() => {
+                            setSelectedCategory(category);
+                            setSelectedItem(item);
+                            setSelectedSubItem(subItem);
+                            handleOpenDialog('subItem', true, subItem);
+                          }}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
+                          edge="end"
+                          onClick={() => handleDelete('subItem', subItem.id, category?.id, item.id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  </Box>
+                ))}
+              </Box>
+            ))}
           </Paper>
         ))}
       </List>
@@ -314,8 +312,22 @@ const CategoryManager: React.FC = () => {
             label="Name"
             fullWidth
             value={formData.name}
-            onChange={(e) => setFormData({ name: e.target.value })}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            sx={{ mb: 2 }}
           />
+          {dialogType === 'item' && (
+            <FormControl fullWidth sx={{ mt: 2 }}>
+              <InputLabel>Scale Type</InputLabel>
+              <Select
+                value={formData.scaleType}
+                label="Scale Type"
+                onChange={(e) => setFormData({ ...formData, scaleType: e.target.value as 'rating' | 'weight' })}
+              >
+                <MenuItem value="rating">Rating (0-4)</MenuItem>
+                <MenuItem value="weight">Weight (0-500g)</MenuItem>
+              </Select>
+            </FormControl>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>

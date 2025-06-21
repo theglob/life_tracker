@@ -7,7 +7,10 @@ import {
   Typography,
   Paper,
   Button,
+  IconButton,
+  ListItemSecondaryAction,
 } from '@mui/material';
+import { Delete as DeleteIcon } from '@mui/icons-material';
 import { Entry } from '../types';
 import { TrackingEntry } from '../types/TrackingTypes';
 import { API_URL } from '../config';
@@ -32,18 +35,25 @@ interface SubItem {
 interface EntryListProps {
   entries: Entry[];
   onRefresh: () => void;
+  onDelete?: (entryId: string) => void;
 }
 
-const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh }) => {
+const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh, onDelete }) => {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    onRefresh();
     fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    // Automatically refresh entries when component mounts
+    onRefresh();
   }, [onRefresh]);
 
   const fetchCategories = async () => {
     try {
+      setIsLoading(true);
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/api/categories`, {
         headers: {
@@ -55,6 +65,31 @@ const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh }) => {
       setCategories(data.categories);
     } catch (error) {
       console.error('Error fetching categories:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (entryId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/entries/${entryId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete entry');
+      }
+
+      // Call the onDelete callback if provided
+      if (onDelete) {
+        onDelete(entryId);
+      }
+    } catch (error) {
+      console.error('Error deleting entry:', error);
     }
   };
 
@@ -71,9 +106,22 @@ const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh }) => {
       return category.name;
     }
     
+    // First, try to find it as a subItem in any item
+    for (const item of category.items) {
+      const subItem = item.subItems.find(subItem => subItem.id === itemId);
+      if (subItem) {
+        return subItem.name;
+      }
+    }
+    
+    // If not found as subItem, try to find it as an item
     const item = category.items.find(item => item.id === itemId);
-    const subItem = item?.subItems?.find(subItem => subItem.id === itemId);
-    return subItem?.name || item?.name || itemId;
+    if (item) {
+      return item.name;
+    }
+    
+    // If not found, return the ID
+    return itemId;
   };
 
   return (
@@ -87,7 +135,13 @@ const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh }) => {
         </Button>
       </Box>
 
-      {entries.length === 0 ? (
+      {isLoading ? (
+        <Paper sx={{ p: 3, textAlign: 'center' }}>
+          <Typography color="text.secondary">
+            Loading entries...
+          </Typography>
+        </Paper>
+      ) : entries.length === 0 ? (
         <Paper sx={{ p: 3, textAlign: 'center' }}>
           <Typography color="text.secondary">
             No entries yet. Add your first entry!
@@ -112,19 +166,29 @@ const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh }) => {
                     <Typography component="span" variant="body2" color="text.primary">
                       {new Date(entry.timestamp).toLocaleString()}
                     </Typography>
-                    {entry.rating && (
+                    {entry.rating !== undefined && (
                       <Typography component="span" variant="body2" color="text.secondary">
                         {' - Rating: '}{entry.rating}
                       </Typography>
                     )}
+                    {entry.weight !== undefined && (
+                      <Typography component="span" variant="body2" color="text.secondary">
+                        {' - Weight: '}{entry.weight}g
+                      </Typography>
+                    )}
                     {entry.notes && (
-                      <Typography component="p" variant="body2" color="text.secondary">
-                        {entry.notes}
+                      <Typography component="span" variant="body2" color="text.secondary">
+                        {' - '}{entry.notes}
                       </Typography>
                     )}
                   </>
                 }
               />
+              <ListItemSecondaryAction>
+                <IconButton edge="end" aria-label="delete" onClick={() => handleDelete(entry.id)}>
+                  <DeleteIcon />
+                </IconButton>
+              </ListItemSecondaryAction>
             </ListItem>
           ))}
         </List>
