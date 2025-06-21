@@ -5,26 +5,12 @@
       "name": "How do you feel?",
       "items": [
         {
-          "id": "physical",
-          "name": "Physical",
-          "subItems": [
-            {
-              "id": "headache",
-              "name": "Headache"
-            },
-            {
-              "id": "neck-tension",
-              "name": "Neck Tension"
-            }
-          ]
-        },
-        {
           "id": "emotional",
           "name": "Emotional",
           "subItems": [
             {
               "id": "happy",
-              "name": "Happy"
+              "name": "Anxious1"
             },
             {
               "id": "sad",
@@ -39,6 +25,11 @@
               "name": "Stressed"
             }
           ]
+        },
+        {
+          "name": "test",
+          "id": "1750515252805",
+          "subItems": []
         }
       ]
     },
