@@ -1,0 +1,9 @@
+Find your machine's ID: flyctl status
+SSH into the machine: flyctl ssh console -s <machine-id>
+Once inside, delete the users file: rm /app/server/data/users.json
+Exit the SSH session: exit
+Restart the machine to force it to create the new user file: flyctl machine restart <machine-id>
+
+
+flyctl machine list
+flyctl machine start [machine id]
