@@ -62,14 +62,15 @@ async function initializeDataFiles() {
   try {
     await fs.access(usersPath);
   } catch {
-    // Get the admin password from environment variables, with a fallback for local dev
-    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
-    
-    // Log a warning if the default password is used
-    if (adminPassword === 'admin123') {
-      console.warn('WARNING: Using default admin password. Set the ADMIN_PASSWORD environment variable for production.');
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    if (!adminPassword) {
+      console.error('FATAL: ADMIN_PASSWORD environment variable is not set.');
+      console.error('Please set the secret using `flyctl secrets set ADMIN_PASSWORD=\"your_secure_password\"` and restart the application.');
+      process.exit(1);
     }
 
+    console.log('Creating initial admin user...');
     const hashedPassword = await bcrypt.hash(adminPassword, 10);
     const initialUsers = [{
       id: '1',
@@ -78,7 +79,7 @@ async function initializeDataFiles() {
       role: 'admin'
     }];
     await fs.writeFile(usersPath, JSON.stringify(initialUsers, null, 2));
-    console.log('Created admin user.');
+    console.log('Created admin user successfully.');
   }
 
   try {
