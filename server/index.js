@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 import { auth, generateToken } from './middleware/auth.js';
+import { exec } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -419,6 +420,20 @@ app.delete('/api/entries/:entryId', auth, async (req, res) => {
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).send('OK');
+});
+
+// Add after other routes
+app.post('/api/backup/drive', auth, async (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  exec('node server/scripts/backupToDrive.cjs', (error, stdout, stderr) => {
+    if (error) {
+      console.error('Backup error:', error, stderr);
+      return res.status(500).json({ error: 'Backup failed', details: stderr });
+    }
+    res.json({ success: true, message: 'Backup completed', output: stdout });
+  });
 });
 
 // Initialize and start server

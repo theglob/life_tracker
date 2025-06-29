@@ -11,6 +11,7 @@ import EntryList from './components/EntryList';
 import EntryForm from './components/EntryForm';
 import CategoryManager from './components/CategoryManager';
 import Navigation from './components/Navigation';
+import VerwaltungPage from './components/VerwaltungPage';
 import { Entry, User } from './types';
 import { API_URL } from './config';
 import './mobile-styles.css';
@@ -219,6 +220,13 @@ const App: React.FC = () => {
                   <CategoryManager />
                 ) : (
                   <Navigate to="/" replace />
+                )
+              } />
+              <Route path="/verwaltung" element={
+                isAuthenticated ? (
+                  <VerwaltungPage />
+                ) : (
+                  <Navigate to="/login" replace />
                 )
               } />
               <Route path="*" element={<Navigate to="/" replace />} />
