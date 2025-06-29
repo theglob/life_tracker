@@ -20,9 +20,11 @@ import {
   Paper,
   Divider,
 } from '@mui/material';
-import { Delete as DeleteIcon, Edit as EditIcon, Add as AddIcon } from '@mui/icons-material';
+import { Delete as DeleteIcon, Edit as EditIcon, Add as AddIcon, Close as CloseIcon } from '@mui/icons-material';
 import { API_URL } from '../config';
 import '../mobile-styles.css';
+import ListItemButton from '@mui/material/ListItemButton';
+import FoodSearchDialog from './FoodSearchDialog';
 
 interface Category {
   id: string;
@@ -45,12 +47,16 @@ interface SubItem {
 
 const CategoryManager: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [selectedSubItem, setSelectedSubItem] = useState<SubItem | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [dialogType, setDialogType] = useState<'category' | 'item' | 'subItem'>('category');
   const [editMode, setEditMode] = useState(false);
+  const [openFoodSearch, setOpenFoodSearch] = useState(false);
+  const [foodSearchTarget, setFoodSearchTarget] = useState<'category' | 'subcategory'>('category');
   const [formData, setFormData] = useState({ 
     name: '', 
     categoryType: 'self' as 'food' | 'self',
@@ -78,6 +84,18 @@ const CategoryManager: React.FC = () => {
   };
 
   const handleOpenDialog = (type: 'category' | 'item' | 'subItem', edit = false, data?: any) => {
+    if (type === 'item' && !edit && selectedCategory?.categoryType === 'food') {
+      setFoodSearchTarget('category');
+      setOpenFoodSearch(true);
+      return;
+    }
+    
+    if (type === 'subItem' && !edit && selectedCategory?.categoryType === 'food') {
+      setFoodSearchTarget('subcategory');
+      setOpenFoodSearch(true);
+      return;
+    }
+    
     setDialogType(type);
     setEditMode(edit);
     if (edit && data) {
@@ -186,6 +204,61 @@ const CategoryManager: React.FC = () => {
     }
   };
 
+  const handleFoodSearchSave = async (selectedFoods: string[]) => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      if (foodSearchTarget === 'category') {
+        for (const foodName of selectedFoods) {
+          const response = await fetch(`${API_URL}/api/categories/${selectedCategory?.id}/items`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ 
+              name: foodName,
+              scaleType: 'weight'
+            }),
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Failed to add food item: ${foodName}`);
+          }
+        }
+      } else if (foodSearchTarget === 'subcategory' && selectedItem) {
+        for (const foodName of selectedFoods) {
+          const response = await fetch(`${API_URL}/api/categories/${selectedCategory?.id}/items/${selectedItem.id}/subitems`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ 
+              name: foodName
+            }),
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Failed to add food subitem: ${foodName}`);
+          }
+        }
+      }
+      
+      fetchCategories();
+    } catch (error) {
+      console.error('Error adding food items:', error);
+    }
+  };
+
+  const handleAddSubcategory = (category: Category) => {
+    setSelectedCategory(category);
+    setDialogType('item');
+    setEditMode(false);
+    setFormData({ name: '', categoryType: 'self', scaleType: 'rating' });
+    setOpenDialog(true);
+  };
+
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto', p: 2 }} className="mobile-container">
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }} className="mobile-spacing-medium">
@@ -202,121 +275,126 @@ const CategoryManager: React.FC = () => {
 
       <List>
         {categories.map((category) => (
-          <Paper key={category.id} sx={{ mb: 2 }}>
-            <ListItem>
-              <ListItemText
-                primary={category.name}
-                secondary={
-                  <>
-                    {category.categoryType === 'food' ? 'Food Category' : 'Self Category'}
-                  </>
-                }
-              />
-              <ListItemSecondaryAction>
-                <IconButton
-                  edge="end"
-                  onClick={() => {
-                    setSelectedCategory(category);
-                    handleOpenDialog('item');
-                  }}
-                  data-testid="AddIcon"
-                >
-                  <AddIcon />
-                </IconButton>
-                <IconButton
-                  edge="end"
-                  onClick={() => {
-                    setSelectedCategory(category);
-                    handleOpenDialog('category', true, category);
-                  }}
-                  data-testid="EditIcon"
-                >
-                  <EditIcon />
-                </IconButton>
-                <IconButton
-                  edge="end"
-                  onClick={() => handleDelete('category', category.id)}
-                  data-testid="DeleteIcon"
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </ListItemSecondaryAction>
-            </ListItem>
-
-            {category.items.length > 0 && category.items.map((item) => (
-              <Box key={item.id} sx={{ pl: 4 }}>
-                <ListItem>
-                  <ListItemText
-                    primary={item.name}
-                    secondary={
-                      <>
-                        {item.scaleType && (
-                          <span style={{ marginLeft: '8px', color: '#666' }}>
-                            {getScaleTypeLabel(item.scaleType)}
-                          </span>
-                        )}
-                      </>
-                    }
-                  />
-                  <ListItemSecondaryAction>
+          <React.Fragment key={category.id}>
+            <Paper sx={{ mb: 2 }}>
+              <ListItemButton onClick={() => {
+                setExpandedCategoryId(expandedCategoryId === category.id ? null : category.id);
+                setExpandedItemId(null);
+              }}>
+                <ListItemText
+                  primary={category.name + (category.items.length > 0 ? ` (${category.items.length})` : '')}
+                  secondary={category.categoryType === 'food' ? 'Food Category' : 'Self Category'}
+                />
+                <ListItemSecondaryAction>
+                  {category.categoryType === 'food' ? (
+                    <>
+                      <IconButton
+                        edge="end"
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          setSelectedCategory(category); 
+                          setFoodSearchTarget('category');
+                          setOpenFoodSearch(true); 
+                        }}
+                        title="Nahrungsmittel hinzufügen"
+                      >
+                        <AddIcon />
+                      </IconButton>
+                      <IconButton
+                        edge="end"
+                        onClick={(e) => { e.stopPropagation(); handleAddSubcategory(category); }}
+                        title="Unterkategorie hinzufügen"
+                      >
+                        <CloseIcon />
+                      </IconButton>
+                    </>
+                  ) : (
                     <IconButton
                       edge="end"
-                      onClick={() => {
-                        setSelectedCategory(category);
-                        setSelectedItem(item);
-                        handleOpenDialog('subItem');
-                      }}
+                      onClick={(e) => { e.stopPropagation(); setSelectedCategory(category); handleOpenDialog('item'); }}
                     >
                       <AddIcon />
                     </IconButton>
-                    <IconButton
-                      edge="end"
-                      onClick={() => {
-                        setSelectedCategory(category);
-                        setSelectedItem(item);
-                        handleOpenDialog('item', true, item);
-                      }}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      edge="end"
-                      onClick={() => handleDelete('item', item.id, category.id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </ListItemSecondaryAction>
-                </ListItem>
-
-                {item.subItems.map((subItem) => (
-                  <Box key={subItem.id} sx={{ pl: 4 }}>
-                    <ListItem>
-                      <ListItemText primary={subItem.name} />
-                      <ListItemSecondaryAction>
-                        <IconButton
-                          edge="end"
-                          onClick={() => {
-                            setSelectedCategory(category);
-                            setSelectedItem(item);
-                            setSelectedSubItem(subItem);
-                            handleOpenDialog('subItem', true, subItem);
-                          }}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton
-                          edge="end"
-                          onClick={() => handleDelete('subItem', subItem.id, category?.id, item.id)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                  </Box>
-                ))}
-              </Box>
-            ))}
-          </Paper>
+                  )}
+                  <IconButton
+                    edge="end"
+                    onClick={(e) => { e.stopPropagation(); setSelectedCategory(category); handleOpenDialog('category', true, category); }}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    edge="end"
+                    onClick={(e) => { e.stopPropagation(); handleDelete('category', category.id); }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </ListItemSecondaryAction>
+              </ListItemButton>
+              {/* Items below expanded category */}
+              {expandedCategoryId === category.id && (
+                <Box sx={{ pl: 2 }}>
+                  {category.items.length > 0 ? category.items.map((item) => (
+                    <React.Fragment key={item.id}>
+                      <Paper sx={{ mb: 1, ml: 2 }}>
+                        <ListItemButton onClick={() => setExpandedItemId(expandedItemId === item.id ? null : item.id)}>
+                          <ListItemText
+                            primary={item.name + (item.subItems.length > 0 ? ` (${item.subItems.length})` : '')}
+                            secondary={item.scaleType ? getScaleTypeLabel(item.scaleType) : ''}
+                          />
+                          <ListItemSecondaryAction>
+                            <IconButton
+                              edge="end"
+                              onClick={(e) => { e.stopPropagation(); setSelectedCategory(category); setSelectedItem(item); handleOpenDialog('subItem'); }}
+                            >
+                              <AddIcon />
+                            </IconButton>
+                            <IconButton
+                              edge="end"
+                              onClick={(e) => { e.stopPropagation(); setSelectedCategory(category); setSelectedItem(item); handleOpenDialog('item', true, item); }}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                            <IconButton
+                              edge="end"
+                              onClick={(e) => { e.stopPropagation(); handleDelete('item', item.id, category.id); }}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </ListItemSecondaryAction>
+                        </ListItemButton>
+                        {/* Subitems below expanded item */}
+                        {expandedItemId === item.id && (
+                          <Box sx={{ pl: 4 }}>
+                            {item.subItems.length > 0 ? item.subItems.map((subItem) => (
+                              <Paper key={subItem.id} sx={{ mb: 1, ml: 2 }}>
+                                <ListItem>
+                                  <ListItemText primary={subItem.name} />
+                                  <ListItemSecondaryAction>
+                                    <IconButton
+                                      edge="end"
+                                      onClick={() => { setSelectedCategory(category); setSelectedItem(item); setSelectedSubItem(subItem); handleOpenDialog('subItem', true, subItem); }}
+                                    >
+                                      <EditIcon />
+                                    </IconButton>
+                                    <IconButton
+                                      edge="end"
+                                      onClick={() => handleDelete('subItem', subItem.id, category.id, item.id)}
+                                    >
+                                      <DeleteIcon />
+                                    </IconButton>
+                                  </ListItemSecondaryAction>
+                                </ListItem>
+                              </Paper>
+                            )) : <Typography sx={{ ml: 4 }}>No subitems</Typography>}
+                          </Box>
+                        )}
+                      </Paper>
+                    </React.Fragment>
+                  )) : <Typography sx={{ ml: 2 }}>No items</Typography>}
+                </Box>
+              )}
+            </Paper>
+          </React.Fragment>
         ))}
       </List>
 
@@ -370,6 +448,12 @@ const CategoryManager: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <FoodSearchDialog
+        open={openFoodSearch}
+        onClose={() => setOpenFoodSearch(false)}
+        onSave={handleFoodSearchSave}
+      />
     </Box>
   );
 };
