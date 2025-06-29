@@ -182,7 +182,7 @@ const CategoryManager: React.FC = () => {
         return 'Volume (0-1000ml)';
       case 'rating':
       default:
-        return 'Rating (0-4)';
+        return 'Rating (1-5)';
     }
   };
 
@@ -355,10 +355,10 @@ const CategoryManager: React.FC = () => {
                 label="Scale Type"
                 onChange={(e) => setFormData({ ...formData, scaleType: e.target.value as 'rating' | 'weight' | 'count' | 'volume' })}
               >
-                <MenuItem value="rating">Rating (0-4)</MenuItem>
-                <MenuItem value="weight">Weight (0-500g)</MenuItem>
-                <MenuItem value="count">Count</MenuItem>
-                <MenuItem value="volume">Volume</MenuItem>
+                <MenuItem value="rating">{getScaleTypeLabel('rating')}</MenuItem>
+                <MenuItem value="weight">{getScaleTypeLabel('weight')}</MenuItem>
+                <MenuItem value="count">{getScaleTypeLabel('count')}</MenuItem>
+                <MenuItem value="volume">{getScaleTypeLabel('volume')}</MenuItem>
               </Select>
             </FormControl>
           )}

@@ -151,6 +151,14 @@ const Navigation: React.FC<NavigationProps> = ({ isAuthenticated, onLogout, user
               horizontal: 'right',
             }}
           >
+            <MenuItem
+              component={RouterLink}
+              to="/verwaltung"
+              onClick={handleUserMenuClose}
+              className="mobile-text-medium"
+            >
+              Verwaltung
+            </MenuItem>
             <MenuItem onClick={handleLogout} className="mobile-text-medium">
               Logout
             </MenuItem>
