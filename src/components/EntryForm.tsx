@@ -49,6 +49,7 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
   const [notes, setNotes] = useState('');
   const [valueMap, setValueMap] = useState<{ [id: string]: number }>({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCategories();
@@ -229,32 +230,35 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
         <Paper sx={{ p: 2 }} className="mobile-card">
           <List>
             {selectedCategory.items.map((item) => (
-              <ListItem
-                key={item.id}
-                disablePadding
-                className="mobile-list-item"
-                onClick={e => {
-                  if ((e.target as HTMLElement).closest('.scale-input')) return;
-                  handleItemToggle(item.id);
-                }}
-                style={{ cursor: 'pointer' }}
-              >
-                {item.subItems.length > 0 ? (
-                  <ListItemButton onClick={() => setSelectedItem(item)}>
-                    <ListItemText primary={item.name} />
-                  </ListItemButton>
-                ) : (
-                  <>
-                    <ListItemText primary={item.name} />
-                    <input
-                      type="checkbox"
-                      checked={selectedItems.includes(item.id)}
-                      onChange={() => handleItemToggle(item.id)}
-                      style={{ marginLeft: 8 }}
-                      onClick={e => e.stopPropagation()}
-                    />
-                    {selectedItems.includes(item.id) && (
-                      <span className="scale-input">
+              <React.Fragment key={item.id}>
+                <ListItem
+                  disablePadding
+                  className="mobile-list-item"
+                  onClick={e => {
+                    if ((e.target as HTMLElement).closest('.scale-input')) return;
+                    if (item.subItems.length > 0) {
+                      setExpandedItemId(expandedItemId === item.id ? null : item.id);
+                    } else {
+                      handleItemToggle(item.id);
+                    }
+                  }}
+                  style={{ cursor: item.subItems.length > 0 ? 'pointer' : 'pointer' }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+                      {item.subItems.length === 0 && (
+                        <input
+                          type="checkbox"
+                          checked={selectedItems.includes(item.id)}
+                          onChange={() => handleItemToggle(item.id)}
+                          style={{ marginLeft: 0, marginRight: 8 }}
+                          onClick={e => e.stopPropagation()}
+                        />
+                      )}
+                      <ListItemText primary={item.name} />
+                    </Box>
+                    {item.subItems.length === 0 && selectedItems.includes(item.id) && (
+                      <span className="scale-input" style={{ marginLeft: 8 }}>
                         {renderScaleInput(
                           item.scaleType,
                           valueMap[item.id] ?? defaultValueFor(item.scaleType),
@@ -262,46 +266,52 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
                         )}
                       </span>
                     )}
-                  </>
-                )}
-              </ListItem>
-            ))}
-          </List>
-        </Paper>
-      )}
-
-      {selectedCategory && selectedItem && (
-        <Paper sx={{ p: 2 }} className="mobile-card">
-          <List>
-            {selectedItem.subItems.map((subItem) => (
-              <ListItem
-                key={subItem.id}
-                disablePadding
-                className="mobile-list-item"
-                onClick={e => {
-                  if ((e.target as HTMLElement).closest('.scale-input')) return;
-                  handleSubItemToggle(subItem.id);
-                }}
-                style={{ cursor: 'pointer' }}
-              >
-                <ListItemText primary={subItem.name} />
-                <input
-                  type="checkbox"
-                  checked={selectedSubItems.includes(subItem.id)}
-                  onChange={() => handleSubItemToggle(subItem.id)}
-                  style={{ marginLeft: 8 }}
-                  onClick={e => e.stopPropagation()}
-                />
-                {selectedSubItems.includes(subItem.id) && (
-                  <span className="scale-input">
-                    {renderScaleInput(
-                      selectedItem.scaleType,
-                      valueMap[subItem.id] ?? defaultValueFor(selectedItem.scaleType),
-                      v => handleValueChange(subItem.id, v)
+                    {item.subItems.length > 0 && (
+                      <span style={{ marginLeft: 8, fontSize: 18 }}>
+                        {expandedItemId === item.id ? '▼' : '▶'}
+                      </span>
                     )}
-                  </span>
+                  </Box>
+                </ListItem>
+                {item.subItems.length > 0 && expandedItemId === item.id && (
+                  <List>
+                    {item.subItems.map((subItem) => (
+                      <ListItem
+                        key={subItem.id}
+                        disablePadding
+                        className="mobile-list-item"
+                        onClick={e => {
+                          if ((e.target as HTMLElement).closest('.scale-input')) return;
+                          handleSubItemToggle(subItem.id);
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+                            <input
+                              type="checkbox"
+                              checked={selectedSubItems.includes(subItem.id)}
+                              onChange={() => handleSubItemToggle(subItem.id)}
+                              style={{ marginLeft: 0, marginRight: 8 }}
+                              onClick={e => e.stopPropagation()}
+                            />
+                            <ListItemText primary={subItem.name} />
+                          </Box>
+                          {selectedSubItems.includes(subItem.id) && (
+                            <span className="scale-input" style={{ marginLeft: 8 }}>
+                              {renderScaleInput(
+                                item.scaleType,
+                                valueMap[subItem.id] ?? defaultValueFor(item.scaleType),
+                                v => handleValueChange(subItem.id, v)
+                              )}
+                            </span>
+                          )}
+                        </Box>
+                      </ListItem>
+                    ))}
+                  </List>
                 )}
-              </ListItem>
+              </React.Fragment>
             ))}
           </List>
         </Paper>
