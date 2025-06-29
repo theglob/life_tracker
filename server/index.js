@@ -435,6 +435,43 @@ app.get('/api/food-items', auth, async (req, res) => {
   }
 });
 
+// Add custom food item endpoint
+app.post('/api/food-items', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { foodName } = req.body;
+    if (!foodName || !foodName.trim()) {
+      return res.status(400).json({ error: 'Food name is required' });
+    }
+
+    console.log('Adding custom food item:', foodName);
+    
+    // Read existing food data
+    const data = await fs.readFile(nahrungsmittelPath, 'utf8');
+    const foodData = JSON.parse(data);
+    
+    // Check if food item already exists
+    if (foodData.nahrungsmittel.includes(foodName.trim())) {
+      return res.status(409).json({ error: 'Food item already exists' });
+    }
+    
+    // Add new food item
+    foodData.nahrungsmittel.push(foodName.trim());
+    
+    // Write back to file
+    await fs.writeFile(nahrungsmittelPath, JSON.stringify(foodData, null, 2));
+    
+    console.log('Successfully added food item:', foodName);
+    res.status(201).json({ message: 'Food item added successfully', foodName: foodName.trim() });
+  } catch (error) {
+    console.error('Error adding food item:', error);
+    res.status(500).json({ error: 'Failed to add food item' });
+  }
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).send('OK');

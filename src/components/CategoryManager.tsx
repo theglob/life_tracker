@@ -290,7 +290,12 @@ const CategoryManager: React.FC = () => {
                     <>
                       <IconButton
                         edge="end"
-                        onClick={(e) => { e.stopPropagation(); setSelectedCategory(category); setOpenFoodSearch(true); }}
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          setSelectedCategory(category); 
+                          setFoodSearchTarget('category');
+                          setOpenFoodSearch(true); 
+                        }}
                         title="Nahrungsmittel hinzufügen"
                       >
                         <AddIcon />

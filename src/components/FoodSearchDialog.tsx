@@ -14,7 +14,10 @@ import {
   Typography,
   Box,
   Chip,
+  IconButton,
+  InputAdornment,
 } from '@mui/material';
+import { Add as AddIcon } from '@mui/icons-material';
 import { API_URL } from '../config';
 
 interface FoodSearchDialogProps {
@@ -34,6 +37,9 @@ const FoodSearchDialog: React.FC<FoodSearchDialogProps> = ({ open, onClose, onSa
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFoods, setSelectedFoods] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [newFoodName, setNewFoodName] = useState('');
+  const [newFoodAlternatives, setNewFoodAlternatives] = useState('');
 
   useEffect(() => {
     if (open) {
@@ -76,6 +82,38 @@ const FoodSearchDialog: React.FC<FoodSearchDialogProps> = ({ open, onClose, onSa
     }
   };
 
+  const handleAddCustomFood = async () => {
+    if (!newFoodName.trim()) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const alternatives = newFoodAlternatives.trim() ? `,${newFoodAlternatives.trim()}` : '';
+      const fullFoodName = `${newFoodName.trim()}${alternatives}`;
+      
+      const response = await fetch(`${API_URL}/api/food-items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ foodName: fullFoodName }),
+      });
+      
+      if (!response.ok) throw new Error('Failed to add custom food item');
+      
+      // Refresh the food items list
+      await fetchFoodItems();
+      
+      // Close the add dialog and reset form
+      setShowAddDialog(false);
+      setNewFoodName('');
+      setNewFoodAlternatives('');
+      
+    } catch (error) {
+      console.error('Error adding custom food item:', error);
+    }
+  };
+
   const filteredFoodItems = foodItems.filter(item =>
     item.primaryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.alternativeNames.some(name => name.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -108,75 +146,126 @@ const FoodSearchDialog: React.FC<FoodSearchDialogProps> = ({ open, onClose, onSa
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>Nahrungsmittel hinzufügen</DialogTitle>
-      <DialogContent>
-        <TextField
-          autoFocus
-          margin="dense"
-          label="Suchen..."
-          fullWidth
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{ mb: 2 }}
-        />
-        
-        {selectedFoods.length > 0 && (
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              Ausgewählte Nahrungsmittel:
-            </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {selectedFoods.map((food) => (
-                <Chip
-                  key={food}
-                  label={food}
-                  onDelete={() => handleFoodToggle(food)}
-                  size="small"
-                />
-              ))}
-            </Box>
-          </Box>
-        )}
-
-        {isLoading ? (
-          <Typography>Lade Nahrungsmittel...</Typography>
-        ) : (
-          <>
-            <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
-              {foodItems.length} Nahrungsmittel geladen • {filteredFoodItems.length} gefunden
-            </Typography>
-            <List sx={{ maxHeight: 400, overflow: 'auto' }}>
-              {filteredFoodItems.map((item) => (
-                <ListItem key={item.fullName} disablePadding>
-                  <ListItemButton
-                    onClick={() => handleFoodToggle(item.primaryName)}
-                    dense
+    <>
+      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+        <DialogTitle>Nahrungsmittel hinzufügen</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Suchen..."
+            fullWidth
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{ mb: 2 }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowAddDialog(true)}
+                    edge="end"
+                    title="Eigenes Nahrungsmittel hinzufügen"
                   >
-                    <Checkbox
-                      edge="start"
-                      checked={selectedFoods.includes(item.primaryName)}
-                      tabIndex={-1}
-                      disableRipple
-                    />
-                    <ListItemText
-                      primary={item.primaryName}
-                      secondary={item.alternativeNames.length > 0 ? item.alternativeNames.join(', ') : undefined}
-                    />
-                  </ListItemButton>
-                </ListItem>
-              ))}
-            </List>
-          </>
-        )}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose}>Abbrechen</Button>
-        <Button onClick={handleSave} variant="contained" disabled={selectedFoods.length === 0}>
-          Hinzufügen ({selectedFoods.length})
-        </Button>
-      </DialogActions>
-    </Dialog>
+                    <AddIcon />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          
+          {selectedFoods.length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Ausgewählte Nahrungsmittel:
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {selectedFoods.map((food) => (
+                  <Chip
+                    key={food}
+                    label={food}
+                    onDelete={() => handleFoodToggle(food)}
+                    size="small"
+                  />
+                ))}
+              </Box>
+            </Box>
+          )}
+
+          {isLoading ? (
+            <Typography>Lade Nahrungsmittel...</Typography>
+          ) : (
+            <>
+              <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
+                {foodItems.length} Nahrungsmittel geladen • {filteredFoodItems.length} gefunden
+              </Typography>
+              <List sx={{ maxHeight: 400, overflow: 'auto' }}>
+                {filteredFoodItems.map((item) => (
+                  <ListItem key={item.fullName} disablePadding>
+                    <ListItemButton
+                      onClick={() => handleFoodToggle(item.primaryName)}
+                      dense
+                    >
+                      <Checkbox
+                        edge="start"
+                        checked={selectedFoods.includes(item.primaryName)}
+                        tabIndex={-1}
+                        disableRipple
+                      />
+                      <ListItemText
+                        primary={item.primaryName}
+                        secondary={item.alternativeNames.length > 0 ? item.alternativeNames.join(', ') : undefined}
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+              </List>
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Abbrechen</Button>
+          <Button onClick={handleSave} variant="contained" disabled={selectedFoods.length === 0}>
+            Hinzufügen ({selectedFoods.length})
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Custom Food Dialog */}
+      <Dialog open={showAddDialog} onClose={() => setShowAddDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Eigenes Nahrungsmittel hinzufügen</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Name des Nahrungsmittels"
+            fullWidth
+            value={newFoodName}
+            onChange={(e) => setNewFoodName(e.target.value)}
+            sx={{ mb: 2 }}
+            placeholder="z.B. Apfel"
+          />
+          <TextField
+            margin="dense"
+            label="Alternative Namen (optional)"
+            fullWidth
+            value={newFoodAlternatives}
+            onChange={(e) => setNewFoodAlternatives(e.target.value)}
+            placeholder="z.B. Öpfel, Apple"
+            helperText="Mehrere Namen durch Komma getrennt"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowAddDialog(false)}>Abbrechen</Button>
+          <Button 
+            onClick={handleAddCustomFood} 
+            variant="contained" 
+            disabled={!newFoodName.trim()}
+          >
+            Hinzufügen
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 };
 
