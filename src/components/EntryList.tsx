@@ -26,6 +26,7 @@ interface Item {
   id: string;
   name: string;
   subItems: SubItem[];
+  scaleType?: 'rating' | 'weight' | 'count' | 'volume';
 }
 
 interface SubItem {
@@ -125,6 +126,37 @@ const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh, onDelete }) =
     return itemId;
   };
 
+  // Helper to get the scaleType for a given itemId (item or subitem) in a category
+  const getScaleType = (categoryId: string, itemId: string): string | undefined => {
+    const category = categories.find(cat => cat.id === categoryId);
+    if (!category) return undefined;
+    // Try to find as subItem first
+    for (const item of category.items) {
+      if (item.subItems.some(sub => sub.id === itemId)) {
+        return item.scaleType;
+      }
+    }
+    // Try to find as item
+    const item = category.items.find(item => item.id === itemId);
+    return item?.scaleType;
+  };
+
+  // Helper to get the value/unit label for an entry item
+  const getValueLabel = (item: any, scaleType: string | undefined) => {
+    if (!scaleType) return '';
+    switch (scaleType) {
+      case 'weight':
+        return `${item.value ?? item.weight ?? ''}g`;
+      case 'count':
+        return `${item.value ?? item.count ?? ''} stk`;
+      case 'volume':
+        return `${item.value ?? item.volume ?? ''}ml`;
+      case 'rating':
+      default:
+        return `${item.value ?? item.rating ?? ''}`;
+    }
+  };
+
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto' }} className="mobile-container">
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }} className="mobile-spacing-medium">
@@ -167,55 +199,34 @@ const EntryList: React.FC<EntryListProps> = ({ entries, onRefresh, onDelete }) =
               <List dense>
                 {entry.items ? (
                   // New structure with items array
-                  entry.items.map((item, index) => (
-                    <ListItem
-                      key={`${entry.id}-${index}`}
-                      sx={{
-                        bgcolor: 'background.paper',
-                        borderRadius: 1,
-                        mb: 0.5,
-                      }}
-                      className="mobile-list-item"
-                    >
-                      <ListItemText
-                        primary={getItemName(entry.categoryId, item.itemId)}
-                        secondary={
-                          <>
-                            {item.rating !== undefined && (
-                              <Typography component="span" variant="body2" color="text.secondary" className="mobile-text-small">
-                                Rating: {item.rating}
-                              </Typography>
-                            )}
-                            {item.weight !== undefined && (
-                              <Typography component="span" variant="body2" color="text.secondary" className="mobile-text-small">
-                                Weight: {item.weight}g
-                              </Typography>
-                            )}
-                            {item.count !== undefined && (
-                              <Typography component="span" variant="body2" color="text.secondary" className="mobile-text-small">
-                                Count: {item.count}
-                              </Typography>
-                            )}
-                            {item.volume !== undefined && (
-                              <Typography component="span" variant="body2" color="text.secondary" className="mobile-text-small">
-                                Volume: {item.volume}ml
-                              </Typography>
-                            )}
-                          </>
-                        }
-                        className="mobile-list-text"
-                      />
-                      <ListItemSecondaryAction>
-                        <IconButton
-                          edge="end"
-                          onClick={() => handleDelete(entry.id)}
-                          className="mobile-icon-small"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                  ))
+                  entry.items.map((item, index) => {
+                    const scaleType = getScaleType(entry.categoryId, item.itemId);
+                    return (
+                      <ListItem
+                        key={`${entry.id}-${index}`}
+                        sx={{
+                          bgcolor: 'background.paper',
+                          borderRadius: 1,
+                          mb: 0.5,
+                        }}
+                        className="mobile-list-item"
+                      >
+                        <ListItemText
+                          primary={`${getItemName(entry.categoryId, item.itemId)}: ${getValueLabel(item, scaleType)}`}
+                          className="mobile-list-text"
+                        />
+                        <ListItemSecondaryAction>
+                          <IconButton
+                            edge="end"
+                            onClick={() => handleDelete(entry.id)}
+                            className="mobile-icon-small"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                    );
+                  })
                 ) : (
                   // Legacy structure with single item
                   <ListItem

@@ -21,7 +21,6 @@ import '../mobile-styles.css';
 interface Category {
   id: string;
   name: string;
-  categoryType: 'food' | 'self';
   items: Item[];
 }
 
@@ -44,17 +43,12 @@ interface EntryFormProps {
 const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [selectedItem, setSelectedItem] = useState<string>('');
-  const [selectedSubItem, setSelectedSubItem] = useState<string>('');
-  const [rating, setRating] = useState<number>(3);
-  const [weight, setWeight] = useState<number>(250);
-  const [count, setCount] = useState<number>(1);
-  const [volume, setVolume] = useState<number>(250);
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const [selectedSubItems, setSelectedSubItems] = useState<string[]>([]);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
-  
-  // Food category specific state
-  const [filterText, setFilterText] = useState('');
-  const [selectedFoodItems, setSelectedFoodItems] = useState<{itemId: string, scaleType: 'weight' | 'count' | 'volume', value: number}[]>([]);
+  const [valueMap, setValueMap] = useState<{ [id: string]: number }>({});
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCategories();
@@ -76,587 +70,276 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
     }
   };
 
-  const handleCategoryClick = (category: Category) => {
-    setSelectedCategory(category);
-    setSelectedItem('');
-    setSelectedSubItem('');
-  };
-
-  const handleItemClick = (itemId: string) => {
-    console.log('handleItemClick called with itemId:', itemId);
-    setSelectedItem(itemId);
-    setSelectedSubItem('');
-  };
-
-  const handleSubItemClick = (subItemId: string) => {
-    setSelectedSubItem(subItemId);
-  };
-
   const handleBackToCategories = () => {
     setSelectedCategory(null);
-    setSelectedItem('');
-    setSelectedSubItem('');
-    setSelectedFoodItems([]);
-    setFilterText('');
+    setSelectedItem(null);
+    setSelectedSubItems([]);
+    setSelectedItems([]);
+    setValueMap({});
   };
 
   const handleBackToItems = () => {
-    setSelectedItem('');
-    setSelectedSubItem('');
+    setSelectedItem(null);
+    setSelectedSubItems([]);
+    setSelectedItems([]);
+    setValueMap({});
   };
 
-  // Food category specific handlers
-  const handleFoodItemToggle = (itemId: string) => {
-    setSelectedFoodItems(prev => {
-      const existing = prev.find(item => item.itemId === itemId);
-      if (existing) {
-        return prev.filter(item => item.itemId !== itemId);
-      } else {
-        // Get the item to determine its scale type and default value
-        const item = selectedCategory?.items.find(i => i.id === itemId);
-        const scaleType = item?.scaleType || 'weight';
-        // For food categories, we only support weight, count, and volume (not rating)
-        const foodScaleType = scaleType === 'rating' ? 'weight' : scaleType as 'weight' | 'count' | 'volume';
-        const defaultValue = foodScaleType === 'weight' ? 100 : 
-                           foodScaleType === 'count' ? 1 : 250; // volume default
-        return [...prev, { itemId, scaleType: foodScaleType, value: defaultValue }];
-      }
-    });
-  };
-
-  const handleFoodItemValueChange = (itemId: string, newValue: number) => {
-    setSelectedFoodItems(prev => 
-      prev.map(item => 
-        item.itemId === itemId ? { ...item, value: newValue } : item
-      )
+  const handleItemToggle = (itemId: string) => {
+    setSelectedItems((prev) =>
+      prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
     );
   };
 
-  const handleFoodSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedCategory || selectedFoodItems.length === 0) return;
-    
-    // Create a single entry with multiple items
-    const entryItems = selectedFoodItems.map(foodItem => {
-      const baseItem = { itemId: foodItem.itemId };
-      switch (foodItem.scaleType) {
-        case 'weight':
-          return { ...baseItem, weight: foodItem.value };
-        case 'count':
-          return { ...baseItem, count: foodItem.value };
-        case 'volume':
-          return { ...baseItem, volume: foodItem.value };
-        default:
-          return { ...baseItem, weight: foodItem.value };
-      }
-    });
-    
-    onSubmit({
-      categoryId: selectedCategory.id,
-      items: entryItems,
-      notes: notes || undefined,
-    });
-    
-    // Reset form
-    setSelectedCategory(null);
-    setSelectedItem('');
-    setSelectedSubItem('');
-    setRating(3);
-    setWeight(250);
-    setNotes('');
-    setSelectedFoodItems([]);
-    setFilterText('');
+  const handleSubItemToggle = (subItemId: string) => {
+    setSelectedSubItems((prev) =>
+      prev.includes(subItemId) ? prev.filter((id) => id !== subItemId) : [...prev, subItemId]
+    );
+  };
+
+  const handleValueChange = (id: string, value: number) => {
+    setValueMap((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const defaultValueFor = (scaleType?: string) => {
+    switch (scaleType) {
+      case 'weight': return 100;
+      case 'count': return 1;
+      case 'volume': return 250;
+      case 'rating': default: return 3;
+    }
+  };
+
+  const renderScaleInput = (
+    scaleType: 'rating' | 'weight' | 'count' | 'volume' | undefined,
+    value: number,
+    onChange: (v: number) => void
+  ) => {
+    let min = 1, max = 5, step = 1, unit = '', label = '';
+    switch (scaleType) {
+      case 'weight':
+        min = 0; max = 500; step = 10; unit = 'g'; break;
+      case 'count':
+        min = 0; max = 10; step = 1; unit = 'stk'; break;
+      case 'volume':
+        min = 0; max = 1000; step = 50; unit = 'ml'; break;
+      case 'rating':
+      default:
+        min = 1; max = 5; step = 1; unit = ''; break;
+    }
+    return (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0, minWidth: 220, justifyContent: 'flex-start', p: 0, m: 0 }}>
+        <Typography variant="caption" sx={{ minWidth: 32, ml: 2 }}>{min}</Typography>
+        <Slider
+          value={value}
+          onChange={(_, v) => onChange(v as number)}
+          min={min}
+          max={max}
+          step={step}
+          sx={{ width: 100, mx: 1, p: 0, m: 0 }}
+        />
+        <Typography variant="caption" sx={{ minWidth: 32, ml: 2 }}>{max}</Typography>
+        <Typography variant="body2" sx={{ ml: 2, minWidth: 48, textAlign: 'left' }}>{value}{unit}</Typography>
+      </Box>
+    );
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCategory) return;
-    
-    const selectedItemData = selectedCategory.items.find(item => item.id === selectedItem);
-    const scaleType = selectedItemData?.scaleType || 'rating';
-    
-    const entryItem = {
-      itemId: selectedSubItem || selectedItem,
-      ...(scaleType === 'rating' ? { rating } : 
-          scaleType === 'weight' ? { weight } :
-          scaleType === 'count' ? { count } :
-          { volume })
-    };
-    
-    onSubmit({
+    let items: any[] = [];
+    if (selectedItem && selectedItem.subItems.length > 0) {
+      items = selectedSubItems.map((subItemId) => {
+        const subItem = selectedItem.subItems.find((s) => s.id === subItemId);
+        const scaleType = selectedItem.scaleType;
+        const value = valueMap[subItemId] || 0;
+        let valueObj: any = { itemId: subItemId };
+        switch (scaleType) {
+          case 'weight': valueObj.weight = value; break;
+          case 'count': valueObj.count = value; break;
+          case 'volume': valueObj.volume = value; break;
+          case 'rating':
+          default: valueObj.rating = value; break;
+        }
+        return valueObj;
+      });
+    } else if (selectedCategory && selectedCategory.items.length > 0) {
+      items = selectedItems.map((itemId) => {
+        const item = selectedCategory.items.find((i) => i.id === itemId);
+        const scaleType = item?.scaleType;
+        const value = valueMap[itemId] || 0;
+        let valueObj: any = { itemId };
+        switch (scaleType) {
+          case 'weight': valueObj.weight = value; break;
+          case 'count': valueObj.count = value; break;
+          case 'volume': valueObj.volume = value; break;
+          case 'rating':
+          default: valueObj.rating = value; break;
+        }
+        return valueObj;
+      });
+    }
+    if (items.length === 0) {
+      setFormError('Bitte wähle mindestens ein Item aus.');
+      return;
+    }
+    setFormError(null);
+    const entryToSubmit = {
       categoryId: selectedCategory.id,
-      items: [entryItem],
+      items,
       notes: notes || undefined,
-    });
-    // Reset form
-    setSelectedCategory(null);
-    setSelectedItem('');
-    setSelectedSubItem('');
-    setRating(3);
-    setWeight(250);
-    setCount(1);
-    setVolume(250);
-    setNotes('');
-  };
-
-  const selectedItemData = selectedCategory?.items.find(item => item.id === selectedItem);
-  
-  const renderScale = (scaleType?: 'rating' | 'weight' | 'count' | 'volume') => {
-    if (scaleType === 'weight') {
-      return (
-        <Slider
-          value={weight}
-          onChange={(_, value) => setWeight(value as number)}
-          min={0}
-          max={500}
-          step={10}
-          marks={[
-            { value: 0, label: '0g' },
-            { value: 100, label: '100g' },
-            { value: 200, label: '200g' },
-            { value: 300, label: '300g' },
-            { value: 400, label: '400g' },
-            { value: 500, label: '500g' },
-          ]}
-          valueLabelDisplay="auto"
-          valueLabelFormat={(value) => `${value}g`}
-          sx={{ mb: 2 }}
-        />
-      );
-    }
-    
-    if (scaleType === 'count') {
-      return (
-        <Slider
-          value={count}
-          onChange={(_, value) => setCount(value as number)}
-          min={0}
-          max={10}
-          step={0.5}
-          marks={[
-            { value: 0, label: '0' },
-            { value: 2, label: '2' },
-            { value: 4, label: '4' },
-            { value: 6, label: '6' },
-            { value: 8, label: '8' },
-            { value: 10, label: '10' },
-          ]}
-          valueLabelDisplay="auto"
-          valueLabelFormat={(value) => `${value}`}
-          sx={{ mb: 2 }}
-        />
-      );
-    }
-    
-    if (scaleType === 'volume') {
-      return (
-        <Slider
-          value={volume}
-          onChange={(_, value) => setVolume(value as number)}
-          min={0}
-          max={1000}
-          step={50}
-          marks={[
-            { value: 0, label: '0ml' },
-            { value: 200, label: '200ml' },
-            { value: 400, label: '400ml' },
-            { value: 600, label: '600ml' },
-            { value: 800, label: '800ml' },
-            { value: 1000, label: '1000ml' },
-          ]}
-          valueLabelDisplay="auto"
-          valueLabelFormat={(value) => `${value}ml`}
-          sx={{ mb: 2 }}
-        />
-      );
-    }
-    
-    // Default to rating scale
-    return (
-      <Slider
-        value={rating}
-        onChange={(_, value) => setRating(value as number)}
-        min={1}
-        max={5}
-        step={1}
-        marks={[
-          { value: 1, label: 'sehr schlecht' },
-          { value: 3, label: 'ok' },
-          { value: 5, label: 'sehr gut' },
-        ]}
-        valueLabelDisplay="auto"
-        sx={{ 
-          mb: 2,
-          '& .MuiSlider-markLabel': {
-            fontSize: '0.6rem',
-            transform: 'scale(0.8)',
-            transformOrigin: 'center'
-          },
-          '& .MuiSlider-markLabel[data-index="0"]': {
-            textAlign: 'left',
-            left: '0% !important',
-            transform: 'translateX(0) scale(0.8)'
-          },
-          '& .MuiSlider-markLabel[data-index="1"]': {
-            textAlign: 'center',
-            left: '50% !important',
-            transform: 'translateX(-50%) scale(0.8)'
-          },
-          '& .MuiSlider-markLabel[data-index="2"]': {
-            textAlign: 'right',
-            left: '100% !important',
-            transform: 'translateX(-100%) scale(0.8)'
-          }
-        }}
-      />
-    );
+    };
+    console.log('Submitting entry:', entryToSubmit);
+    onSubmit(entryToSubmit);
+    handleBackToCategories();
   };
 
   return (
     <Box sx={{ maxWidth: 600, mx: 'auto', p: 2 }} className="mobile-container">
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }} className="mobile-spacing-medium">
+      <Box sx={{ mb: 2 }}>
         <Typography variant="h5" component="h1" className="mobile-page-title">
-          {selectedCategory ? `New Entry - ${selectedCategory.name}` : 'New Entry'}
+          New Entry
         </Typography>
-        {selectedCategory && (
-          <Button
-            variant="outlined"
-            startIcon={<ArrowBackIcon />}
-            onClick={handleBackToCategories}
-            className="mobile-back-button"
-          >
-            Back to Categories
-          </Button>
-        )}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+          <Button size="small" onClick={handleBackToCategories} disabled={!selectedCategory}>Categories</Button>
+          {selectedCategory && <span>&gt;</span>}
+          {selectedCategory && (
+            <Button size="small" onClick={handleBackToItems} disabled={!selectedItem}>{selectedCategory.name}</Button>
+          )}
+          {selectedItem && <span>&gt;</span>}
+          {selectedItem && <Typography variant="body2">{selectedItem.name}</Typography>}
+        </Box>
       </Box>
 
-      {!selectedCategory ? (
-        // Show categories list
+      {!selectedCategory && (
         <Paper sx={{ p: 2 }} className="mobile-card">
           <List>
             {categories.map((category) => (
               <ListItem key={category.id} disablePadding className="mobile-list-item">
-                <ListItemButton onClick={() => handleCategoryClick(category)}>
-                  <ListItemText
-                    primary={category.name}
-                    secondary={category.items.length === 0 ? 'No items - use rating scale' : `${category.items.length} items`}
-                    className="mobile-list-text"
-                  />
+                <ListItemButton onClick={() => setSelectedCategory(category)}>
+                  <ListItemText primary={category.name} />
                 </ListItemButton>
               </ListItem>
             ))}
           </List>
         </Paper>
-      ) : (
-        // Show items for selected category
-        <Box>
-          {selectedCategory.items.length === 0 ? (
-            // Show rating and notes for category with no items
-            <Paper sx={{ p: 3 }} className="mobile-card">
-              <Typography variant="h6" sx={{ mb: 2 }} className="mobile-section-title">
-                Rate: {selectedCategory.name}
-              </Typography>
-              
-              {renderScale('rating')}
+      )}
 
-              <TextField
-                fullWidth
-                label="Notes"
-                multiline
-                rows={4}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                sx={{ mb: 2 }}
-                className="mobile-form-field"
-              />
-
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleSubmit}
-                fullWidth
-                className="mobile-button"
+      {selectedCategory && !selectedItem && (
+        <Paper sx={{ p: 2 }} className="mobile-card">
+          <List>
+            {selectedCategory.items.map((item) => (
+              <ListItem
+                key={item.id}
+                disablePadding
+                className="mobile-list-item"
+                onClick={e => {
+                  if ((e.target as HTMLElement).closest('.scale-input')) return;
+                  handleItemToggle(item.id);
+                }}
+                style={{ cursor: 'pointer' }}
               >
-                Save Entry
-              </Button>
-            </Paper>
-          ) : (
-            // Show items list
-            <Paper sx={{ p: 2 }} className="mobile-card">
-              {selectedCategory.categoryType === 'food' ? (
-                // Food category - show checkboxes and filtering
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Filter items"
-                    value={filterText}
-                    onChange={(e) => setFilterText(e.target.value)}
-                    sx={{ mb: 2 }}
-                    placeholder="Type to filter items..."
-                    className="mobile-form-field"
-                  />
-                  
-                  <List>
-                    {selectedCategory.items
-                      .filter(item => 
-                        item.name.toLowerCase().includes(filterText.toLowerCase())
-                      )
-                      .map((item) => {
-                        const isSelected = selectedFoodItems.some(fi => fi.itemId === item.id);
-                        return (
-                          <ListItem key={item.id} disablePadding className="mobile-list-item">
-                            <ListItemButton onClick={() => handleFoodItemToggle(item.id)}>
-                              <ListItemText
-                                primary={item.name}
-                                secondary="Click to select"
-                                className="mobile-list-text"
-                              />
-                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  readOnly
-                                  style={{ marginRight: '8px' }}
-                                />
-                              </Box>
-                            </ListItemButton>
-                          </ListItem>
-                        );
-                      })}
-                  </List>
+                {item.subItems.length > 0 ? (
+                  <ListItemButton onClick={() => setSelectedItem(item)}>
+                    <ListItemText primary={item.name} />
+                  </ListItemButton>
+                ) : (
+                  <>
+                    <ListItemText primary={item.name} />
+                    <input
+                      type="checkbox"
+                      checked={selectedItems.includes(item.id)}
+                      onChange={() => handleItemToggle(item.id)}
+                      style={{ marginLeft: 8 }}
+                      onClick={e => e.stopPropagation()}
+                    />
+                    {selectedItems.includes(item.id) && (
+                      <span className="scale-input">
+                        {renderScaleInput(
+                          item.scaleType,
+                          valueMap[item.id] ?? defaultValueFor(item.scaleType),
+                          v => handleValueChange(item.id, v)
+                        )}
+                      </span>
+                    )}
+                  </>
+                )}
+              </ListItem>
+            ))}
+          </List>
+        </Paper>
+      )}
 
-                  {selectedFoodItems.length > 0 && (
-                    <Box sx={{ mt: 3 }}>
-                      <Typography variant="h6" sx={{ mb: 2 }} className="mobile-section-title">
-                        Selected Items
-                      </Typography>
-                      <List>
-                        {selectedFoodItems.map((foodItem) => {
-                          const item = selectedCategory.items.find(i => i.id === foodItem.itemId);
-                          return (
-                            <ListItem key={foodItem.itemId} className="mobile-list-item">
-                              <ListItemText
-                                primary={item?.name}
-                                secondary={
-                                  <Box component="span" sx={{ display: 'block', mt: 1 }}>
-                                    <Typography component="span" variant="body2" sx={{ display: 'block', mb: 1 }} className="mobile-text-small">
-                                      {foodItem.scaleType === 'weight' ? `Weight: ${foodItem.value}g` : 
-                                       foodItem.scaleType === 'count' ? `Count: ${foodItem.value}` :
-                                       `Volume: ${foodItem.value}ml`}
-                                    </Typography>
-                                    {foodItem.scaleType === 'weight' ? (
-                                      <Slider
-                                        value={foodItem.value}
-                                        onChange={(_, value) => handleFoodItemValueChange(foodItem.itemId, value as number)}
-                                        min={0}
-                                        max={500}
-                                        step={10}
-                                        marks={[
-                                          { value: 0, label: '0g' },
-                                          { value: 100, label: '100g' },
-                                          { value: 200, label: '200g' },
-                                          { value: 300, label: '300g' },
-                                          { value: 400, label: '400g' },
-                                          { value: 500, label: '500g' },
-                                        ]}
-                                        valueLabelDisplay="auto"
-                                        valueLabelFormat={(value) => `${value}g`}
-                                      />
-                                    ) : foodItem.scaleType === 'count' ? (
-                                      <Slider
-                                        value={foodItem.value}
-                                        onChange={(_, value) => handleFoodItemValueChange(foodItem.itemId, value as number)}
-                                        min={0}
-                                        max={10}
-                                        step={0.5}
-                                        marks={[
-                                          { value: 0, label: '0' },
-                                          { value: 2, label: '2' },
-                                          { value: 4, label: '4' },
-                                          { value: 6, label: '6' },
-                                          { value: 8, label: '8' },
-                                          { value: 10, label: '10' },
-                                        ]}
-                                        valueLabelDisplay="auto"
-                                        valueLabelFormat={(value) => `${value}`}
-                                      />
-                                    ) : (
-                                      <Slider
-                                        value={foodItem.value}
-                                        onChange={(_, value) => handleFoodItemValueChange(foodItem.itemId, value as number)}
-                                        min={0}
-                                        max={1000}
-                                        step={50}
-                                        marks={[
-                                          { value: 0, label: '0ml' },
-                                          { value: 200, label: '200ml' },
-                                          { value: 400, label: '400ml' },
-                                          { value: 600, label: '600ml' },
-                                          { value: 800, label: '800ml' },
-                                          { value: 1000, label: '1000ml' },
-                                        ]}
-                                        valueLabelDisplay="auto"
-                                        valueLabelFormat={(value) => `${value}ml`}
-                                      />
-                                    )}
-                                  </Box>
-                                }
-                                className="mobile-list-text"
-                              />
-                              <IconButton
-                                edge="end"
-                                onClick={() => handleFoodItemToggle(foodItem.itemId)}
-                                className="mobile-icon-small"
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            </ListItem>
-                          );
-                        })}
-                      </List>
-
-                      <TextField
-                        fullWidth
-                        label="Notes"
-                        multiline
-                        rows={3}
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        sx={{ mb: 2 }}
-                        className="mobile-form-field"
-                      />
-
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={handleFoodSubmit}
-                        fullWidth
-                        className="mobile-button"
-                      >
-                        Save Entry
-                      </Button>
-                    </Box>
-                  )}
-                </Box>
-              ) : (
-                // Self category - show items with sub-items
-                <List>
-                  {selectedCategory.items.map((item) => (
-                    <ListItem key={item.id} disablePadding className="mobile-list-item">
-                      <ListItemButton onClick={() => handleItemClick(item.id)}>
-                        <ListItemText
-                          primary={item.name}
-                          secondary={item.subItems.length > 0 ? `${item.subItems.length} sub-items` : 'No sub-items'}
-                          className="mobile-list-text"
-                        />
-                      </ListItemButton>
-                    </ListItem>
-                  ))}
-                </List>
-              )}
-            </Paper>
-          )}
-
-          {selectedItem && selectedCategory.items.length > 0 && (
-            <Box sx={{ mt: 2 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" className="mobile-section-title">
-                  {selectedCategory.items.find(item => item.id === selectedItem)?.name}
-                </Typography>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={handleBackToItems}
-                  className="mobile-back-button"
-                >
-                  Back to Items
-                </Button>
-              </Box>
-
-              {selectedCategory.items.find(item => item.id === selectedItem)?.subItems.length === 0 ? (
-                // Show scale and notes for item with no sub-items
-                <Paper sx={{ p: 3 }} className="mobile-card">
-                  {renderScale(selectedCategory.items.find(item => item.id === selectedItem)?.scaleType)}
-
-                  <TextField
-                    fullWidth
-                    label="Notes"
-                    multiline
-                    rows={4}
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    sx={{ mb: 2 }}
-                    className="mobile-form-field"
-                  />
-
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleSubmit}
-                    fullWidth
-                    className="mobile-button"
-                  >
-                    Save Entry
-                  </Button>
-                </Paper>
-              ) : (
-                // Show sub-items list
-                <Paper sx={{ p: 2 }} className="mobile-card">
-                  <List>
-                    {selectedCategory.items
-                      .find(item => item.id === selectedItem)
-                      ?.subItems.map((subItem) => (
-                        <ListItem key={subItem.id} disablePadding className="mobile-list-item">
-                          <ListItemButton onClick={() => handleSubItemClick(subItem.id)}>
-                            <ListItemText
-                              primary={subItem.name}
-                              className="mobile-list-text"
-                            />
-                          </ListItemButton>
-                        </ListItem>
-                      ))}
-                  </List>
-                </Paper>
-              )}
-            </Box>
-          )}
-
-          {selectedSubItem && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="h6" sx={{ mb: 2 }} className="mobile-section-title">
-                {selectedCategory.items
-                  .find(item => item.id === selectedItem)
-                  ?.subItems.find(subItem => subItem.id === selectedSubItem)?.name}
-              </Typography>
-
-              <Paper sx={{ p: 3 }} className="mobile-card">
-                {renderScale(selectedCategory.items.find(item => item.id === selectedItem)?.scaleType)}
-
-                <TextField
-                  fullWidth
-                  label="Notes"
-                  multiline
-                  rows={4}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  sx={{ mb: 2 }}
-                  className="mobile-form-field"
+      {selectedCategory && selectedItem && (
+        <Paper sx={{ p: 2 }} className="mobile-card">
+          <List>
+            {selectedItem.subItems.map((subItem) => (
+              <ListItem
+                key={subItem.id}
+                disablePadding
+                className="mobile-list-item"
+                onClick={e => {
+                  if ((e.target as HTMLElement).closest('.scale-input')) return;
+                  handleSubItemToggle(subItem.id);
+                }}
+                style={{ cursor: 'pointer' }}
+              >
+                <ListItemText primary={subItem.name} />
+                <input
+                  type="checkbox"
+                  checked={selectedSubItems.includes(subItem.id)}
+                  onChange={() => handleSubItemToggle(subItem.id)}
+                  style={{ marginLeft: 8 }}
+                  onClick={e => e.stopPropagation()}
                 />
+                {selectedSubItems.includes(subItem.id) && (
+                  <span className="scale-input">
+                    {renderScaleInput(
+                      selectedItem.scaleType,
+                      valueMap[subItem.id] ?? defaultValueFor(selectedItem.scaleType),
+                      v => handleValueChange(subItem.id, v)
+                    )}
+                  </span>
+                )}
+              </ListItem>
+            ))}
+          </List>
+        </Paper>
+      )}
 
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleSubmit}
-                  fullWidth
-                  className="mobile-button"
-                >
-                  Save Entry
-                </Button>
-              </Paper>
-            </Box>
-          )}
+      {(selectedCategory && (!selectedItem || (selectedItem && selectedItem.subItems.length > 0))) && (
+        <Box sx={{ mt: 2 }}>
+          <TextField
+            fullWidth
+            label="Notes"
+            multiline
+            rows={3}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            sx={{ mb: 2 }}
+            className="mobile-form-field"
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSubmit}
+            fullWidth
+            className="mobile-button"
+          >
+            Save Entry
+          </Button>
         </Box>
       )}
+      <Box sx={{ mt: 4 }}>
+        <Typography variant="caption" sx={{ display: 'block', textAlign: 'center' }}>
+          <b>Bewertungs-Legende:</b> 1: sehr schlecht, 2: schlecht, 3: ok, 4: gut, 5: sehr gut
+        </Typography>
+        {formError && (
+          <Typography color="error" sx={{ mt: 2, textAlign: 'center' }}>
+            {formError}
+          </Typography>
+        )}
+      </Box>
     </Box>
   );
 };
