@@ -41,6 +41,7 @@ app.use(bodyParser.json());
 const dataPath = path.join(__dirname, 'data', 'entries.json');
 const usersPath = path.join(__dirname, 'data', 'users.json');
 const categoriesPath = path.join(__dirname, 'data', 'categories.json');
+const nahrungsmittelPath = path.join(__dirname, '..', 'python', 'nahrungsmittel.json');
 
 // Ensure data directory exists
 async function ensureDataDirectory() {
@@ -414,6 +415,23 @@ app.delete('/api/entries/:entryId', auth, async (req, res) => {
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete entry' });
+  }
+});
+
+// Food items endpoint
+app.get('/api/food-items', auth, async (req, res) => {
+  try {
+    console.log('Food items endpoint called, reading from:', nahrungsmittelPath);
+    const data = await fs.readFile(nahrungsmittelPath, 'utf8');
+    console.log('Raw file data length:', data.length);
+    const foodData = JSON.parse(data);
+    console.log('Parsed food data keys:', Object.keys(foodData));
+    console.log('Number of food items:', foodData.nahrungsmittel?.length || 0);
+    console.log('First few items:', foodData.nahrungsmittel?.slice(0, 3) || []);
+    res.json(foodData);
+  } catch (error) {
+    console.error('Error reading food items:', error);
+    res.status(500).json({ error: 'Failed to read food items' });
   }
 });
 

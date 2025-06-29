@@ -20,10 +20,11 @@ import {
   Paper,
   Divider,
 } from '@mui/material';
-import { Delete as DeleteIcon, Edit as EditIcon, Add as AddIcon } from '@mui/icons-material';
+import { Delete as DeleteIcon, Edit as EditIcon, Add as AddIcon, Close as CloseIcon } from '@mui/icons-material';
 import { API_URL } from '../config';
 import '../mobile-styles.css';
 import ListItemButton from '@mui/material/ListItemButton';
+import FoodSearchDialog from './FoodSearchDialog';
 
 interface Category {
   id: string;
@@ -54,6 +55,8 @@ const CategoryManager: React.FC = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [dialogType, setDialogType] = useState<'category' | 'item' | 'subItem'>('category');
   const [editMode, setEditMode] = useState(false);
+  const [openFoodSearch, setOpenFoodSearch] = useState(false);
+  const [foodSearchTarget, setFoodSearchTarget] = useState<'category' | 'subcategory'>('category');
   const [formData, setFormData] = useState({ 
     name: '', 
     categoryType: 'self' as 'food' | 'self',
@@ -81,6 +84,18 @@ const CategoryManager: React.FC = () => {
   };
 
   const handleOpenDialog = (type: 'category' | 'item' | 'subItem', edit = false, data?: any) => {
+    if (type === 'item' && !edit && selectedCategory?.categoryType === 'food') {
+      setFoodSearchTarget('category');
+      setOpenFoodSearch(true);
+      return;
+    }
+    
+    if (type === 'subItem' && !edit && selectedCategory?.categoryType === 'food') {
+      setFoodSearchTarget('subcategory');
+      setOpenFoodSearch(true);
+      return;
+    }
+    
     setDialogType(type);
     setEditMode(edit);
     if (edit && data) {
@@ -189,6 +204,61 @@ const CategoryManager: React.FC = () => {
     }
   };
 
+  const handleFoodSearchSave = async (selectedFoods: string[]) => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      if (foodSearchTarget === 'category') {
+        for (const foodName of selectedFoods) {
+          const response = await fetch(`${API_URL}/api/categories/${selectedCategory?.id}/items`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ 
+              name: foodName,
+              scaleType: 'weight'
+            }),
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Failed to add food item: ${foodName}`);
+          }
+        }
+      } else if (foodSearchTarget === 'subcategory' && selectedItem) {
+        for (const foodName of selectedFoods) {
+          const response = await fetch(`${API_URL}/api/categories/${selectedCategory?.id}/items/${selectedItem.id}/subitems`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ 
+              name: foodName
+            }),
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Failed to add food subitem: ${foodName}`);
+          }
+        }
+      }
+      
+      fetchCategories();
+    } catch (error) {
+      console.error('Error adding food items:', error);
+    }
+  };
+
+  const handleAddSubcategory = (category: Category) => {
+    setSelectedCategory(category);
+    setDialogType('item');
+    setEditMode(false);
+    setFormData({ name: '', categoryType: 'self', scaleType: 'rating' });
+    setOpenDialog(true);
+  };
+
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto', p: 2 }} className="mobile-container">
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }} className="mobile-spacing-medium">
@@ -216,24 +286,40 @@ const CategoryManager: React.FC = () => {
                   secondary={category.categoryType === 'food' ? 'Food Category' : 'Self Category'}
                 />
                 <ListItemSecondaryAction>
-                  <IconButton
-                    edge="end"
-                    onClick={(e) => { e.stopPropagation(); setSelectedCategory(category); handleOpenDialog('item'); }}
-                    data-testid="AddIcon"
-                  >
-                    <AddIcon />
-                  </IconButton>
+                  {category.categoryType === 'food' ? (
+                    <>
+                      <IconButton
+                        edge="end"
+                        onClick={(e) => { e.stopPropagation(); setSelectedCategory(category); setOpenFoodSearch(true); }}
+                        title="Nahrungsmittel hinzufügen"
+                      >
+                        <AddIcon />
+                      </IconButton>
+                      <IconButton
+                        edge="end"
+                        onClick={(e) => { e.stopPropagation(); handleAddSubcategory(category); }}
+                        title="Unterkategorie hinzufügen"
+                      >
+                        <CloseIcon />
+                      </IconButton>
+                    </>
+                  ) : (
+                    <IconButton
+                      edge="end"
+                      onClick={(e) => { e.stopPropagation(); setSelectedCategory(category); handleOpenDialog('item'); }}
+                    >
+                      <AddIcon />
+                    </IconButton>
+                  )}
                   <IconButton
                     edge="end"
                     onClick={(e) => { e.stopPropagation(); setSelectedCategory(category); handleOpenDialog('category', true, category); }}
-                    data-testid="EditIcon"
                   >
                     <EditIcon />
                   </IconButton>
                   <IconButton
                     edge="end"
                     onClick={(e) => { e.stopPropagation(); handleDelete('category', category.id); }}
-                    data-testid="DeleteIcon"
                   >
                     <DeleteIcon />
                   </IconButton>
@@ -357,6 +443,12 @@ const CategoryManager: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <FoodSearchDialog
+        open={openFoodSearch}
+        onClose={() => setOpenFoodSearch(false)}
+        onSave={handleFoodSearchSave}
+      />
     </Box>
   );
 };
