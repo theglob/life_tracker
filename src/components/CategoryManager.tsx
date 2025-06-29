@@ -212,7 +212,7 @@ const CategoryManager: React.FC = () => {
                 setExpandedItemId(null);
               }}>
                 <ListItemText
-                  primary={category.name}
+                  primary={category.name + (category.items.length > 0 ? ` (${category.items.length})` : '')}
                   secondary={category.categoryType === 'food' ? 'Food Category' : 'Self Category'}
                 />
                 <ListItemSecondaryAction>
@@ -247,7 +247,7 @@ const CategoryManager: React.FC = () => {
                       <Paper sx={{ mb: 1, ml: 2 }}>
                         <ListItemButton onClick={() => setExpandedItemId(expandedItemId === item.id ? null : item.id)}>
                           <ListItemText
-                            primary={item.name}
+                            primary={item.name + (item.subItems.length > 0 ? ` (${item.subItems.length})` : '')}
                             secondary={item.scaleType ? getScaleTypeLabel(item.scaleType) : ''}
                           />
                           <ListItemSecondaryAction>
