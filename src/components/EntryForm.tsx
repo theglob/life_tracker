@@ -422,12 +422,12 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
                     );
                   })}
                   {/* Hintergrund innerer Kreis + Stunden-Kreis + ToggleButtonGroup */}
-                  <Box sx={{ position: 'absolute', left: 55, top: 55, width: 90, height: 90, borderRadius: '50%', bgcolor: 'rgba(10, 30, 80, 0.8)', zIndex: 1 }}>
+                  <Box sx={{ position: 'absolute', left: 40, top: 40, width: 120, height: 120, borderRadius: '50%', bgcolor: 'rgba(10, 30, 80, 0.8)', zIndex: 1 }}>
                     {/* Stunden-Kreis */}
                     {[...Array(12)].map((_, i) => {
                       const angle = (i * 30) * (Math.PI / 180);
-                      const rHour = 36;
-                      const center = 45;
+                      const rHour = 52;
+                      const center = 60;
                       const xHour = center + rHour * Math.sin(angle);
                       const yHour = center - rHour * Math.cos(angle);
                       const hourValAMPM = ampm === 'AM' ? (i + 1) : (i + 13);
