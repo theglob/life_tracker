@@ -476,6 +476,7 @@ const CategoryManager: React.FC = () => {
         open={openFoodSearch}
         onClose={() => setOpenFoodSearch(false)}
         onSave={handleFoodSearchSave}
+        contextName={foodSearchTarget === 'category' ? selectedCategory?.name : (foodSearchTarget === 'subcategory' ? selectedItem?.name : undefined)}
       />
     </Box>
   );
