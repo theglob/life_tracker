@@ -399,49 +399,57 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
               </LocalizationProvider>
               <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <label style={{ fontSize: '0.9rem', color: '#555', marginBottom: 8 }}>Uhrzeit:</label>
-                <Box sx={{ position: 'relative', width: 180, height: 180, mb: 1 }}>
+                <Box sx={{ position: 'relative', width: 200, height: 200, mb: 1 }}>
+                  {/* Hintergrund äußerer Kreis */}
+                  <Box sx={{ position: 'absolute', left: 0, top: 0, width: 200, height: 200, borderRadius: '50%', bgcolor: 'rgba(10, 30, 80, 0.3)', zIndex: 0 }} />
+                  {/* Minuten-Kreis */}
                   {[...Array(6)].map((_, i) => {
                     const angle = (i * 60) * (Math.PI / 180);
-                    const r = 80;
-                    const x = 90 + r * Math.sin(angle);
-                    const y = 90 - r * Math.cos(angle);
+                    const rMin = 95;
+                    const xMin = 100 + rMin * Math.sin(angle);
+                    const yMin = 100 - rMin * Math.cos(angle);
                     const minVal = i * 10;
                     return (
                       <Box
                         key={minVal}
-                        sx={{ position: 'absolute', left: x, top: y, transform: 'translate(-50%, -50%)', cursor: 'pointer', zIndex: 2 }}
+                        sx={{ position: 'absolute', left: xMin, top: yMin, transform: 'translate(-50%, -50%)', cursor: 'pointer', zIndex: 2 }}
                         onClick={() => setMinute(minVal)}
                       >
-                        <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: minute === minVal ? 'primary.main' : '#eee', color: minute === minVal ? 'white' : '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 16, border: minute === minVal ? '2px solid #1976d2' : '1px solid #ccc' }}>
+                        <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: minute === minVal ? 'black' : 'transparent', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 16, border: minute === minVal ? '2px solid #1976d2' : 'none' }}>
                           {minVal.toString().padStart(2, '0')}
                         </Box>
                       </Box>
                     );
                   })}
-                  {[...Array(12)].map((_, i) => {
-                    const angle = (i * 30) * (Math.PI / 180);
-                    const r = 45;
-                    const x = 90 + r * Math.sin(angle);
-                    const y = 90 - r * Math.cos(angle);
-                    const hourVal = (i + 1);
-                    return (
-                      <Box
-                        key={hourVal}
-                        sx={{ position: 'absolute', left: x, top: y, transform: 'translate(-50%, -50%)', cursor: 'pointer', zIndex: 3 }}
-                        onClick={() => setHour(hourVal)}
-                      >
-                        <Box sx={{ width: 28, height: 28, borderRadius: '50%', bgcolor: hour === hourVal ? 'primary.main' : '#fff', color: hour === hourVal ? 'white' : '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 15, border: hour === hourVal ? '2px solid #1976d2' : '1px solid #ccc' }}>
-                          {hourVal}
+                  {/* Hintergrund innerer Kreis + Stunden-Kreis + ToggleButtonGroup */}
+                  <Box sx={{ position: 'absolute', left: 55, top: 55, width: 90, height: 90, borderRadius: '50%', bgcolor: 'rgba(10, 30, 80, 0.8)', zIndex: 1 }}>
+                    {/* Stunden-Kreis */}
+                    {[...Array(12)].map((_, i) => {
+                      const angle = (i * 30) * (Math.PI / 180);
+                      const rHour = 36;
+                      const center = 45;
+                      const xHour = center + rHour * Math.sin(angle);
+                      const yHour = center - rHour * Math.cos(angle);
+                      const hourValAMPM = ampm === 'AM' ? (i + 1) : (i + 13);
+                      return (
+                        <Box
+                          key={hourValAMPM}
+                          sx={{ position: 'absolute', left: xHour, top: yHour, transform: 'translate(-50%, -50%)', cursor: 'pointer', zIndex: 3 }}
+                          onClick={() => setHour(hourValAMPM)}
+                        >
+                          <Box sx={{ width: 28, height: 28, borderRadius: '50%', bgcolor: hour === hourValAMPM ? 'black' : 'transparent', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 13, border: hour === hourValAMPM ? '2px solid #1976d2' : 'none' }}>
+                            {hourValAMPM}
+                          </Box>
                         </Box>
-                      </Box>
-                    );
-                  })}
-                  <Box sx={{ position: 'absolute', left: 90, top: 90, width: 12, height: 12, bgcolor: 'primary.main', borderRadius: '50%', transform: 'translate(-50%, -50%)', zIndex: 4 }} />
+                      );
+                    })}
+                    {/* ToggleButtonGroup zentriert im inneren Kreis */}
+                    <ToggleButtonGroup value={ampm} exclusive onChange={handleAmPm} sx={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 5, height: 22 }}>
+                      <ToggleButton value="AM" sx={{ fontSize: '0.65rem', px: 1, py: 0.2, minWidth: 24, minHeight: 18 }}>AM</ToggleButton>
+                      <ToggleButton value="PM" sx={{ fontSize: '0.65rem', px: 1, py: 0.2, minWidth: 24, minHeight: 18 }}>PM</ToggleButton>
+                    </ToggleButtonGroup>
+                  </Box>
                 </Box>
-                <ToggleButtonGroup value={ampm} exclusive onChange={handleAmPm} sx={{ mt: 1 }}>
-                  <ToggleButton value="AM">AM</ToggleButton>
-                  <ToggleButton value="PM">PM</ToggleButton>
-                </ToggleButtonGroup>
               </Box>
             </AccordionDetails>
           </Accordion>
