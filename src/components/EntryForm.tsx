@@ -216,17 +216,8 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
   return (
     <Box sx={{ maxWidth: 600, mx: 'auto', p: 2 }} className="mobile-container">
       <Box sx={{ mb: 2 }}>
-        <Typography variant="h5" component="h1" className="mobile-page-title">
-          New Entry
-        </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-          <Button size="small" onClick={handleBackToCategories} disabled={!selectedCategory}>Categories</Button>
-          {selectedCategory && <span>&gt;</span>}
-          {selectedCategory && (
-            <Button size="small" onClick={handleBackToItems} disabled={!selectedItem}>{selectedCategory.name}</Button>
-          )}
-          {selectedItem && <span>&gt;</span>}
-          {selectedItem && <Typography variant="body2">{selectedItem.name}</Typography>}
+          {/* Categories-Button entfernt */}
         </Box>
       </Box>
 

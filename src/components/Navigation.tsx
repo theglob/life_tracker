@@ -50,9 +50,9 @@ const Navigation: React.FC<NavigationProps> = ({ isAuthenticated, onLogout, user
   return (
     <>
       {/* Top header - only shows title */}
-      <AppBar position="static" className="mobile-header">
-        <Toolbar sx={{ justifyContent: 'center', minHeight: '48px !important' }}>
-          <Typography variant="h6" component="div" className="mobile-header">
+      <AppBar position="static" className="mobile-header" sx={{ minHeight: '36px', p: '3px', mb: 0 }}>
+        <Toolbar sx={{ justifyContent: 'center', minHeight: '36px !important', p: '3px' }}>
+          <Typography variant="h6" component="div" className="mobile-header" sx={{ fontSize: '0.95rem', mb: 0 }}>
             Life Tracker
           </Typography>
         </Toolbar>

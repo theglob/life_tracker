@@ -33,7 +33,7 @@ const VerwaltungPage: React.FC = () => {
 
   return (
     <Box sx={{ maxWidth: 600, mx: 'auto', p: 3 }}>
-      <Typography variant="h4" sx={{ mb: 3 }}>
+      <Typography variant="h5" sx={{ fontSize: '1.2rem', mb: 1.5 }}>
         Verwaltung
       </Typography>
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
