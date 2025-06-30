@@ -24,6 +24,7 @@ interface FoodSearchDialogProps {
   open: boolean;
   onClose: () => void;
   onSave: (selectedFoods: string[]) => void;
+  contextName?: string;
 }
 
 interface FoodItem {
@@ -32,7 +33,7 @@ interface FoodItem {
   fullName: string;
 }
 
-const FoodSearchDialog: React.FC<FoodSearchDialogProps> = ({ open, onClose, onSave }) => {
+const FoodSearchDialog: React.FC<FoodSearchDialogProps> = ({ open, onClose, onSave, contextName }) => {
   const [foodItems, setFoodItems] = useState<FoodItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFoods, setSelectedFoods] = useState<string[]>([]);
@@ -148,8 +149,32 @@ const FoodSearchDialog: React.FC<FoodSearchDialogProps> = ({ open, onClose, onSa
   return (
     <>
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-        <DialogTitle>Nahrungsmittel hinzufügen</DialogTitle>
-        <DialogContent>
+        <DialogTitle sx={{ fontSize: '1rem' }}>
+          Nahrungsmittel hinzufügen
+          {contextName && (
+            <Typography component="span" sx={{ fontSize: '0.8em', color: 'text.secondary', ml: 1 }}>
+              ({contextName})
+            </Typography>
+          )}
+        </DialogTitle>
+        <DialogContent sx={{ minHeight: 300, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+          {selectedFoods.length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Ausgewählte Nahrungsmittel:
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {selectedFoods.map((food) => (
+                  <Chip
+                    key={food}
+                    label={food}
+                    onDelete={() => handleFoodToggle(food)}
+                    size="small"
+                  />
+                ))}
+              </Box>
+            </Box>
+          )}
           <TextField
             autoFocus
             margin="dense"
@@ -178,32 +203,14 @@ const FoodSearchDialog: React.FC<FoodSearchDialogProps> = ({ open, onClose, onSa
             }}
           />
           
-          {selectedFoods.length > 0 && (
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                Ausgewählte Nahrungsmittel:
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {selectedFoods.map((food) => (
-                  <Chip
-                    key={food}
-                    label={food}
-                    onDelete={() => handleFoodToggle(food)}
-                    size="small"
-                  />
-                ))}
-              </Box>
-            </Box>
-          )}
-
           {isLoading ? (
             <Typography>Lade Nahrungsmittel...</Typography>
           ) : (
             <>
-              <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
+              <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary', fontSize: '0.7rem' }}>
                 {foodItems.length} Nahrungsmittel geladen • {filteredFoodItems.length} gefunden
               </Typography>
-              <List sx={{ maxHeight: 400, overflow: 'auto' }}>
+              <List sx={{ flex: 1, minHeight: 0, maxHeight: '100%', overflow: 'auto' }}>
                 {filteredFoodItems.map((item) => (
                   <ListItem key={item.fullName} disablePadding>
                     <ListItemButton
@@ -218,7 +225,9 @@ const FoodSearchDialog: React.FC<FoodSearchDialogProps> = ({ open, onClose, onSa
                       />
                       <ListItemText
                         primary={item.primaryName}
-                        secondary={item.alternativeNames.length > 0 ? item.alternativeNames.join(', ') : undefined}
+                        secondary={item.alternativeNames.length > 0 ? (
+                          <span style={{ fontSize: '0.7rem' }}>{item.alternativeNames.join(', ')}</span>
+                        ) : undefined}
                       />
                     </ListItemButton>
                   </ListItem>

@@ -12,11 +12,21 @@ import {
   Paper,
   Slider,
   IconButton,
+  ToggleButton,
+  ToggleButtonGroup,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Collapse,
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { Entry } from '../types';
 import { API_URL } from '../config';
 import '../mobile-styles.css';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 interface Category {
   id: string;
@@ -52,6 +62,14 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
   const [valueMap, setValueMap] = useState<{ [id: string]: number }>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+  const [date, setDate] = useState<Date>(() => new Date());
+  const [hour, setHour] = useState<number>(() => {
+    const h = new Date().getHours();
+    return h % 12 === 0 ? 12 : h % 12;
+  });
+  const [minute, setMinute] = useState<number>(() => Math.round(new Date().getMinutes() / 10) * 10);
+  const [ampm, setAmPm] = useState<'AM' | 'PM'>(() => new Date().getHours() < 12 ? 'AM' : 'PM');
+  const [showDateTimePicker, setShowDateTimePicker] = useState(false);
 
   const scaleLabels: Record<ScaleType, string[]> = {
     rating: ['sehr schlecht', 'schlecht', 'ok', 'gut', 'sehr gut'],
@@ -156,6 +174,15 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
     );
   };
 
+  const handleTimeSelect = (h: number, m: number) => {
+    setHour(h);
+    setMinute(m);
+  };
+
+  const handleAmPm = (_: any, value: 'AM' | 'PM') => {
+    if (value) setAmPm(value);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCategory) return;
@@ -203,30 +230,35 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
       return;
     }
     setFormError(null);
+    const d = new Date(date);
+    let h = hour % 12;
+    if (ampm === 'PM') h += 12;
+    d.setHours(h, minute, 0, 0);
+    const timestamp = d.toISOString();
     const entryToSubmit = {
       categoryId: selectedCategory.id,
       items,
       notes: notes || undefined,
+      timestamp,
     };
     console.log('Submitting entry:', entryToSubmit);
     onSubmit(entryToSubmit);
     handleBackToCategories();
   };
 
+  const getDisplayDateTime = () => {
+    const d = new Date(date);
+    let h = hour % 12;
+    if (ampm === 'PM') h += 12;
+    d.setHours(h, minute, 0, 0);
+    return d.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+  };
+
   return (
     <Box sx={{ maxWidth: 600, mx: 'auto', p: 2 }} className="mobile-container">
       <Box sx={{ mb: 2 }}>
-        <Typography variant="h5" component="h1" className="mobile-page-title">
-          New Entry
-        </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-          <Button size="small" onClick={handleBackToCategories} disabled={!selectedCategory}>Categories</Button>
-          {selectedCategory && <span>&gt;</span>}
-          {selectedCategory && (
-            <Button size="small" onClick={handleBackToItems} disabled={!selectedItem}>{selectedCategory.name}</Button>
-          )}
-          {selectedItem && <span>&gt;</span>}
-          {selectedItem && <Typography variant="body2">{selectedItem.name}</Typography>}
+          {/* Categories-Button entfernt */}
         </Box>
       </Box>
 
@@ -347,6 +379,80 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
             sx={{ mb: 2 }}
             className="mobile-form-field"
           />
+          <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
+            Aktuell gewählt: {getDisplayDateTime()}
+          </Typography>
+          <Accordion expanded={showDateTimePicker} onChange={(_, expanded) => setShowDateTimePicker(expanded)} sx={{ mb: 2 }}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography>Datum und Uhrzeit manuell auswählen</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <Box sx={{ mb: 2 }}>
+                  <label style={{ fontSize: '0.9rem', color: '#555' }}>Datum:</label>
+                  <DatePicker
+                    value={date}
+                    onChange={v => v && setDate(v)}
+                    slotProps={{ textField: { size: 'small', fullWidth: true, sx: { mt: 1 } } }}
+                  />
+                </Box>
+              </LocalizationProvider>
+              <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <label style={{ fontSize: '0.9rem', color: '#555', marginBottom: '2px' }}>Uhrzeit:</label>
+                <Box sx={{ position: 'relative', width: 200, height: 200, mb: 1 }}>
+                  {/* Hintergrund äußerer Kreis */}
+                  <Box sx={{ position: 'absolute', left: 0, top: 0, width: 200, height: 200, borderRadius: '50%', bgcolor: 'rgba(10, 30, 80, 0.3)', zIndex: 0 }} />
+                  {/* Minuten-Kreis */}
+                  {[...Array(12)].map((_, i) => {
+                    const angle = (i * 30) * (Math.PI / 180);
+                    const rMin = 95;
+                    const xMin = 100 + rMin * Math.sin(angle);
+                    const yMin = 100 - rMin * Math.cos(angle);
+                    const minVal = i * 5;
+                    return (
+                      <Box
+                        key={minVal}
+                        sx={{ position: 'absolute', left: xMin, top: yMin, transform: 'translate(-50%, -50%)', cursor: 'pointer', zIndex: 2 }}
+                        onClick={() => setMinute(minVal)}
+                      >
+                        <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: minute === minVal ? 'black' : 'transparent', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 16, border: minute === minVal ? '2px solid #1976d2' : 'none' }}>
+                          {minVal.toString().padStart(2, '0')}
+                        </Box>
+                      </Box>
+                    );
+                  })}
+                  {/* Hintergrund innerer Kreis + Stunden-Kreis + ToggleButtonGroup */}
+                  <Box sx={{ position: 'absolute', left: 30, top: 30, width: 140, height: 140, borderRadius: '50%', bgcolor: 'rgba(10, 30, 80, 0.8)', zIndex: 1 }}>
+                    {/* Stunden-Kreis */}
+                    {[...Array(12)].map((_, i) => {
+                      const angle = (i * 30) * (Math.PI / 180);
+                      const rHour = 62;
+                      const center = 70;
+                      const xHour = center + rHour * Math.sin(angle);
+                      const yHour = center - rHour * Math.cos(angle);
+                      const hourValAMPM = ampm === 'AM' ? (i + 1) : (i + 13);
+                      return (
+                        <Box
+                          key={hourValAMPM}
+                          sx={{ position: 'absolute', left: xHour, top: yHour, transform: 'translate(-50%, -50%)', cursor: 'pointer', zIndex: 3 }}
+                          onClick={() => setHour(hourValAMPM)}
+                        >
+                          <Box sx={{ width: 28, height: 28, borderRadius: '50%', bgcolor: hour === hourValAMPM ? 'black' : 'transparent', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 13, border: hour === hourValAMPM ? '2px solid #1976d2' : 'none' }}>
+                            {hourValAMPM}
+                          </Box>
+                        </Box>
+                      );
+                    })}
+                    {/* ToggleButtonGroup zentriert im inneren Kreis */}
+                    <ToggleButtonGroup value={ampm} exclusive onChange={handleAmPm} sx={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 5, height: 22 }}>
+                      <ToggleButton value="AM" sx={{ fontSize: '0.65rem', px: 1, py: 0.2, minWidth: 24, minHeight: 18 }}>AM</ToggleButton>
+                      <ToggleButton value="PM" sx={{ fontSize: '0.65rem', px: 1, py: 0.2, minWidth: 24, minHeight: 18 }}>PM</ToggleButton>
+                    </ToggleButtonGroup>
+                  </Box>
+                </Box>
+              </Box>
+            </AccordionDetails>
+          </Accordion>
           <Button
             variant="contained"
             color="primary"
@@ -359,12 +465,9 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
         </Box>
       )}
       <Box sx={{ mt: 4 }}>
-        {/* Dynamische Skalenanzeige */}
         {(() => {
-          // Ermittle das zuletzt selektierte Item/SubItem
           let currentScaleType: ScaleType | undefined;
           let currentUnit = '';
-          // Prüfe SubItems zuerst
           if (selectedSubItems.length > 0 && selectedCategory) {
             const allItemsWithSub = selectedCategory.items.filter(i => i.subItems.length > 0);
             for (let i = selectedSubItems.length - 1; i >= 0; i--) {
@@ -384,7 +487,6 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
               }
             }
           }
-          // Einheit bestimmen
           switch (currentScaleType) {
             case 'weight': currentUnit = 'Gramm'; break;
             case 'volume': currentUnit = 'Milliliter'; break;

@@ -66,7 +66,8 @@
 }
 
 .mobile-container {
-  padding: 12px !important;
+  padding: 0px !important;
+  margin-top: -5px !important;
   margin-bottom: 20px !important; /* Space for bottom navigation */
 }
 

@@ -267,7 +267,7 @@ const CategoryManager: React.FC = () => {
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto', p: 2 }} className="mobile-container">
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }} className="mobile-spacing-medium">
-        <Typography variant="h5" className="mobile-page-title">Category Manager</Typography>
+        <Typography variant="h5" className="mobile-page-title" sx={{ fontSize: '1.2rem', mb: 1.5 }}>Category Manager</Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -476,6 +476,7 @@ const CategoryManager: React.FC = () => {
         open={openFoodSearch}
         onClose={() => setOpenFoodSearch(false)}
         onSave={handleFoodSearchSave}
+        contextName={foodSearchTarget === 'category' ? selectedCategory?.name : (foodSearchTarget === 'subcategory' ? selectedItem?.name : undefined)}
       />
     </Box>
   );

@@ -384,7 +384,6 @@ app.post('/api/entries', auth, async (req, res) => {
     const newEntry = {
       ...req.body,
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: new Date().toISOString(),
       userId: req.user.id
     };
     entries.push(newEntry);
