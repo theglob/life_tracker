@@ -64,6 +64,7 @@ const CategoryManager: React.FC = () => {
     categoryType: 'self' as 'food' | 'self',
     scaleType: 'rating' as 'rating' | 'weight' | 'count' | 'volume' 
   });
+  const [searchText, setSearchText] = useState('');
 
   useEffect(() => {
     fetchCategories();
@@ -277,8 +278,25 @@ const CategoryManager: React.FC = () => {
         </Button>
       </Box>
 
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <TextField
+          label="Suche"
+          value={searchText}
+          onChange={e => setSearchText(e.target.value)}
+          size="small"
+          sx={{ mr: 1, width: 250 }}
+          InputProps={{
+            endAdornment: searchText && (
+              <IconButton size="small" onClick={() => setSearchText('')}>
+                <CloseIcon />
+              </IconButton>
+            )
+          }}
+        />
+      </Box>
+
       <List>
-        {categories.map((category) => (
+        {categories.filter(category => category.name.toLowerCase().includes(searchText.toLowerCase())).map((category) => (
           <React.Fragment key={category.id}>
             <Paper sx={{ mb: 2 }}>
               <ListItemButton onClick={() => {

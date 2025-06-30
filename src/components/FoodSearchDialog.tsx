@@ -17,7 +17,7 @@ import {
   IconButton,
   InputAdornment,
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Add as AddIcon, Close as CloseIcon } from '@mui/icons-material';
 import { API_URL } from '../config';
 
 interface FoodSearchDialogProps {
@@ -161,6 +161,11 @@ const FoodSearchDialog: React.FC<FoodSearchDialogProps> = ({ open, onClose, onSa
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
+                  {searchTerm && (
+                    <IconButton onClick={() => setSearchTerm('')} size="small" title="Suche löschen">
+                      <CloseIcon />
+                    </IconButton>
+                  )}
                   <IconButton
                     onClick={() => setShowAddDialog(true)}
                     edge="end"
