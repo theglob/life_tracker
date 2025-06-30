@@ -149,7 +149,7 @@ const FoodSearchDialog: React.FC<FoodSearchDialogProps> = ({ open, onClose, onSa
     <>
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogTitle>Nahrungsmittel hinzufügen</DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ minHeight: 300, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
           <TextField
             autoFocus
             margin="dense"
@@ -203,7 +203,7 @@ const FoodSearchDialog: React.FC<FoodSearchDialogProps> = ({ open, onClose, onSa
               <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
                 {foodItems.length} Nahrungsmittel geladen • {filteredFoodItems.length} gefunden
               </Typography>
-              <List sx={{ maxHeight: 400, overflow: 'auto' }}>
+              <List sx={{ flex: 1, minHeight: 0, maxHeight: '100%', overflow: 'auto' }}>
                 {filteredFoodItems.map((item) => (
                   <ListItem key={item.fullName} disablePadding>
                     <ListItemButton
