@@ -398,17 +398,17 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
                 </Box>
               </LocalizationProvider>
               <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <label style={{ fontSize: '0.9rem', color: '#555', marginBottom: 8 }}>Uhrzeit:</label>
+                <label style={{ fontSize: '0.9rem', color: '#555', marginBottom: '2px' }}>Uhrzeit:</label>
                 <Box sx={{ position: 'relative', width: 200, height: 200, mb: 1 }}>
                   {/* Hintergrund äußerer Kreis */}
                   <Box sx={{ position: 'absolute', left: 0, top: 0, width: 200, height: 200, borderRadius: '50%', bgcolor: 'rgba(10, 30, 80, 0.3)', zIndex: 0 }} />
                   {/* Minuten-Kreis */}
-                  {[...Array(6)].map((_, i) => {
-                    const angle = (i * 60) * (Math.PI / 180);
+                  {[...Array(12)].map((_, i) => {
+                    const angle = (i * 30) * (Math.PI / 180);
                     const rMin = 95;
                     const xMin = 100 + rMin * Math.sin(angle);
                     const yMin = 100 - rMin * Math.cos(angle);
-                    const minVal = i * 10;
+                    const minVal = i * 5;
                     return (
                       <Box
                         key={minVal}
@@ -422,12 +422,12 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
                     );
                   })}
                   {/* Hintergrund innerer Kreis + Stunden-Kreis + ToggleButtonGroup */}
-                  <Box sx={{ position: 'absolute', left: 40, top: 40, width: 120, height: 120, borderRadius: '50%', bgcolor: 'rgba(10, 30, 80, 0.8)', zIndex: 1 }}>
+                  <Box sx={{ position: 'absolute', left: 30, top: 30, width: 140, height: 140, borderRadius: '50%', bgcolor: 'rgba(10, 30, 80, 0.8)', zIndex: 1 }}>
                     {/* Stunden-Kreis */}
                     {[...Array(12)].map((_, i) => {
                       const angle = (i * 30) * (Math.PI / 180);
-                      const rHour = 52;
-                      const center = 60;
+                      const rHour = 62;
+                      const center = 70;
                       const xHour = center + rHour * Math.sin(angle);
                       const yHour = center - rHour * Math.cos(angle);
                       const hourValAMPM = ampm === 'AM' ? (i + 1) : (i + 13);
