@@ -149,36 +149,43 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
     e.preventDefault();
     if (!selectedCategory) return;
     let items: any[] = [];
-    if (selectedItem && selectedItem.subItems.length > 0) {
-      items = selectedSubItems.map((subItemId) => {
-        const subItem = selectedItem.subItems.find((s) => s.id === subItemId);
-        const scaleType = selectedItem.scaleType;
-        const value = valueMap[subItemId] || 0;
-        let valueObj: any = { itemId: subItemId };
-        switch (scaleType) {
-          case 'weight': valueObj.weight = value; break;
-          case 'count': valueObj.count = value; break;
-          case 'volume': valueObj.volume = value; break;
-          case 'rating':
-          default: valueObj.rating = value; break;
-        }
-        return valueObj;
-      });
-    } else if (selectedCategory && selectedCategory.items.length > 0) {
-      items = selectedItems.map((itemId) => {
-        const item = selectedCategory.items.find((i) => i.id === itemId);
-        const scaleType = item?.scaleType;
-        const value = valueMap[itemId] || 0;
-        let valueObj: any = { itemId };
-        switch (scaleType) {
-          case 'weight': valueObj.weight = value; break;
-          case 'count': valueObj.count = value; break;
-          case 'volume': valueObj.volume = value; break;
-          case 'rating':
-          default: valueObj.rating = value; break;
-        }
-        return valueObj;
-      });
+    if (selectedCategory && selectedCategory.items.length > 0) {
+      const itemsWithoutSub = selectedCategory.items.filter(item => item.subItems.length === 0);
+      items = [
+        ...items,
+        ...itemsWithoutSub.filter(item => selectedItems.includes(item.id)).map(item => {
+          const scaleType = item?.scaleType;
+          const value = valueMap[item.id] ?? defaultValueFor(scaleType);
+          let valueObj: any = { itemId: item.id };
+          switch (scaleType) {
+            case 'weight': valueObj.weight = value; break;
+            case 'count': valueObj.count = value; break;
+            case 'volume': valueObj.volume = value; break;
+            case 'rating':
+            default: valueObj.rating = value; break;
+          }
+          return valueObj;
+        })
+      ];
+      const itemsWithSub = selectedCategory.items.filter(item => item.subItems.length > 0);
+      items = [
+        ...items,
+        ...itemsWithSub.flatMap(item =>
+          item.subItems.filter(sub => selectedSubItems.includes(sub.id)).map(subItem => {
+            const scaleType = item.scaleType;
+            const value = valueMap[subItem.id] ?? defaultValueFor(scaleType);
+            let valueObj: any = { itemId: subItem.id };
+            switch (scaleType) {
+              case 'weight': valueObj.weight = value; break;
+              case 'count': valueObj.count = value; break;
+              case 'volume': valueObj.volume = value; break;
+              case 'rating':
+              default: valueObj.rating = value; break;
+            }
+            return valueObj;
+          })
+        )
+      ];
     }
     if (items.length === 0) {
       setFormError('Bitte wähle mindestens ein Item aus.');
