@@ -37,13 +37,15 @@ interface Item {
   id: string;
   name: string;
   subItems: SubItem[];
-  scaleType?: 'rating' | 'weight' | 'count' | 'volume';
+  scaleType?: 'rating' | 'weight' | 'count' | 'volume' | 'intensity';
 }
 
 interface SubItem {
   id: string;
   name: string;
 }
+
+type ScaleType = 'rating' | 'weight' | 'count' | 'volume' | 'intensity';
 
 const CategoryManager: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -201,6 +203,8 @@ const CategoryManager: React.FC = () => {
       case 'rating':
       default:
         return 'Rating (1-5)';
+      case 'intensity':
+        return 'Intensität (1-5)';
     }
   };
 
@@ -437,6 +441,7 @@ const CategoryManager: React.FC = () => {
                 <MenuItem value="weight">{getScaleTypeLabel('weight')}</MenuItem>
                 <MenuItem value="count">{getScaleTypeLabel('count')}</MenuItem>
                 <MenuItem value="volume">{getScaleTypeLabel('volume')}</MenuItem>
+                <MenuItem value="intensity">{getScaleTypeLabel('intensity')}</MenuItem>
               </Select>
             </FormControl>
           )}

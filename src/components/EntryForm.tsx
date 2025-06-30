@@ -28,13 +28,15 @@ interface Item {
   id: string;
   name: string;
   subItems: SubItem[];
-  scaleType?: 'rating' | 'weight' | 'count' | 'volume';
+  scaleType?: 'rating' | 'weight' | 'count' | 'volume' | 'intensity';
 }
 
 interface SubItem {
   id: string;
   name: string;
 }
+
+type ScaleType = 'rating' | 'weight' | 'count' | 'volume' | 'intensity';
 
 interface EntryFormProps {
   onSubmit: (entry: Omit<Entry, 'id' | 'timestamp' | 'userId'>) => void;
@@ -50,6 +52,14 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
   const [valueMap, setValueMap] = useState<{ [id: string]: number }>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+
+  const scaleLabels: Record<ScaleType, string[]> = {
+    rating: ['sehr schlecht', 'schlecht', 'ok', 'gut', 'sehr gut'],
+    intensity: ['sehr schwach', 'schwach', 'mittel', 'stark', 'sehr stark'],
+    weight: [],
+    count: [],
+    volume: []
+  };
 
   useEffect(() => {
     fetchCategories();
@@ -102,17 +112,18 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
     setValueMap((prev) => ({ ...prev, [id]: value }));
   };
 
-  const defaultValueFor = (scaleType?: string) => {
+  const defaultValueFor = (scaleType?: ScaleType) => {
     switch (scaleType) {
       case 'weight': return 100;
       case 'count': return 1;
       case 'volume': return 250;
       case 'rating': default: return 3;
+      case 'intensity': return 3;
     }
   };
 
   const renderScaleInput = (
-    scaleType: 'rating' | 'weight' | 'count' | 'volume' | undefined,
+    scaleType: ScaleType | undefined,
     value: number,
     onChange: (v: number) => void
   ) => {
@@ -125,7 +136,7 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
       case 'volume':
         min = 0; max = 1000; step = 50; unit = 'ml'; break;
       case 'rating':
-      default:
+      case 'intensity':
         min = 1; max = 5; step = 1; unit = ''; break;
     }
     return (
@@ -162,7 +173,7 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
             case 'count': valueObj.count = value; break;
             case 'volume': valueObj.volume = value; break;
             case 'rating':
-            default: valueObj.rating = value; break;
+            case 'intensity': valueObj.rating = value; break;
           }
           return valueObj;
         })
@@ -180,7 +191,7 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
               case 'count': valueObj.count = value; break;
               case 'volume': valueObj.volume = value; break;
               case 'rating':
-              default: valueObj.rating = value; break;
+              case 'intensity': valueObj.rating = value; break;
             }
             return valueObj;
           })
@@ -348,9 +359,55 @@ const EntryForm: React.FC<EntryFormProps> = ({ onSubmit }) => {
         </Box>
       )}
       <Box sx={{ mt: 4 }}>
-        <Typography variant="caption" sx={{ display: 'block', textAlign: 'center' }}>
-          <b>Bewertungs-Legende:</b> 1: sehr schlecht, 2: schlecht, 3: ok, 4: gut, 5: sehr gut
-        </Typography>
+        {/* Dynamische Skalenanzeige */}
+        {(() => {
+          // Ermittle das zuletzt selektierte Item/SubItem
+          let currentScaleType: ScaleType | undefined;
+          let currentUnit = '';
+          // Prüfe SubItems zuerst
+          if (selectedSubItems.length > 0 && selectedCategory) {
+            const allItemsWithSub = selectedCategory.items.filter(i => i.subItems.length > 0);
+            for (let i = selectedSubItems.length - 1; i >= 0; i--) {
+              const subId = selectedSubItems[i];
+              const parent = allItemsWithSub.find(item => item.subItems.some(s => s.id === subId));
+              if (parent) {
+                currentScaleType = parent.scaleType;
+                break;
+              }
+            }
+          } else if (selectedItems.length > 0 && selectedCategory) {
+            for (let i = selectedItems.length - 1; i >= 0; i--) {
+              const item = selectedCategory.items.find(it => it.id === selectedItems[i]);
+              if (item) {
+                currentScaleType = item.scaleType;
+                break;
+              }
+            }
+          }
+          // Einheit bestimmen
+          switch (currentScaleType) {
+            case 'weight': currentUnit = 'Gramm'; break;
+            case 'volume': currentUnit = 'Milliliter'; break;
+            case 'count': currentUnit = 'Stück'; break;
+          }
+          if (currentScaleType === 'rating' || currentScaleType === 'intensity') {
+            return (
+              <>
+                <Typography variant="caption" sx={{ display: 'block', textAlign: 'center' }}>
+                  <b>Bewertungs-Legende:</b> {scaleLabels[currentScaleType].map((l, i) => `${i+1}: ${l}`).join(', ')}
+                </Typography>
+              </>
+            );
+          } else if (currentScaleType && currentUnit) {
+            return (
+              <Typography variant="caption" sx={{ display: 'block', textAlign: 'center' }}>
+                Selektierte Skala: {currentUnit}
+              </Typography>
+            );
+          } else {
+            return null;
+          }
+        })()}
         {formError && (
           <Typography color="error" sx={{ mt: 2, textAlign: 'center' }}>
             {formError}
